@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Alert, Platform, ScrollView, Switch, Text, View } from "react-native";
+import { Platform, ScrollView, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
@@ -10,6 +10,7 @@ import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { showAlert } from "@/utils/alert";
 
 const GOAL_LABELS: Record<string, string> = {
   job: "Better Job",
@@ -122,7 +123,7 @@ export default function ProfileTab() {
             label="Blocked users"
             description="Manage your blocked list"
             onPress={() =>
-              Alert.alert("Blocked users", "Nobody is on your block list.")
+              showAlert("Blocked users", "Nobody is on your block list.")
             }
           />
           <Divider />
@@ -131,7 +132,7 @@ export default function ProfileTab() {
             label="Report a user"
             description="Tell us about something inappropriate"
             onPress={() =>
-              Alert.alert(
+              showAlert(
                 "Report",
                 "Open a recent call from your call history to report a user.",
               )
@@ -162,7 +163,7 @@ export default function ProfileTab() {
             label="Language"
             description="English (default)"
             onPress={() =>
-              Alert.alert("Language", "More translations coming soon.")
+              showAlert("Language", "More translations coming soon.")
             }
           />
           <Divider />
@@ -171,7 +172,7 @@ export default function ProfileTab() {
             label="Help & support"
             description="FAQs and contact"
             onPress={() =>
-              Alert.alert("Support", "Email support@speakup.app — we'll reply within 24h.")
+              showAlert("Support", "Email support@speakup.app — we'll reply within 24h.")
             }
           />
           <Divider />
@@ -180,7 +181,7 @@ export default function ProfileTab() {
             label="Reset progress"
             description="Clear all data on this device"
             onPress={() =>
-              Alert.alert(
+              showAlert(
                 "Reset everything?",
                 "Your profile, coins, streak and lessons will be cleared.",
                 [

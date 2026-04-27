@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router, Stack } from "expo-router";
 import React from "react";
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
@@ -11,6 +11,7 @@ import { Card } from "@/components/Card";
 import { CoinBadge } from "@/components/CoinBadge";
 import { Pill } from "@/components/Pill";
 import { useColors } from "@/hooks/useColors";
+import { showAlert } from "@/utils/alert";
 
 const STEPS = [
   {
@@ -42,7 +43,7 @@ export default function BecomeMentor() {
 
   const startTest = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    Alert.alert(
+    showAlert(
       "Speaking test",
       "Find a quiet space and speak for 2 minutes about why you want to become a mentor. We'll evaluate fluency and clarity.",
       [

@@ -4,12 +4,12 @@ import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
@@ -19,6 +19,7 @@ import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { CONSTANTS, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { showAlert } from "@/utils/alert";
 
 const COIN_PACKS = [
   { id: "starter", coins: 20, price: "₹10", popular: false },
@@ -42,7 +43,7 @@ export default function WalletTab() {
 
   const handleAd = async () => {
     if (adsRemainingToday <= 0) {
-      Alert.alert("All caught up", "You've watched the maximum ads for today. Come back tomorrow!");
+      showAlert("All caught up", "You've watched the maximum ads for today. Come back tomorrow!");
       return;
     }
     setAdLoading(true);
@@ -54,14 +55,14 @@ export default function WalletTab() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
         () => undefined,
       );
-      Alert.alert("Coins added", `You earned ${CONSTANTS.COIN_AD_REWARD} coins.`);
+      showAlert("Coins added", `You earned ${CONSTANTS.COIN_AD_REWARD} coins.`);
     } else if (result.reason) {
-      Alert.alert("Limit reached", result.reason);
+      showAlert("Limit reached", result.reason);
     }
   };
 
   const handleBuyPack = (pack: (typeof COIN_PACKS)[number]) => {
-    Alert.alert(
+    showAlert(
       "Buy coins",
       `Get ${pack.coins} coins for ${pack.price}? In-app purchases activate after publishing.`,
       [
@@ -81,7 +82,7 @@ export default function WalletTab() {
 
   const handlePremium = () => {
     if (state.premium) {
-      Alert.alert("Cancel premium?", "You'll lose extra daily minutes and reduced ads.", [
+      showAlert("Cancel premium?", "You'll lose extra daily minutes and reduced ads.", [
         { text: "Keep premium", style: "cancel" },
         {
           text: "Cancel",
@@ -91,7 +92,7 @@ export default function WalletTab() {
       ]);
       return;
     }
-    Alert.alert(
+    showAlert(
       "SpeakUp Premium",
       "Unlock 40 daily minutes, smarter matches, fewer ads — ₹29/month.",
       [
@@ -104,6 +105,20 @@ export default function WalletTab() {
               Haptics.NotificationFeedbackType.Success,
             ).catch(() => undefined);
           },
+        },
+      ],
+    );
+  };
+
+  const handleEarnings = () => {
+    showAlert(
+      "Mentor earnings",
+      "You need to apply and pass the speaking test to start earning. Want to begin now?",
+      [
+        { text: "Not now", style: "cancel" },
+        {
+          text: "Apply",
+          onPress: () => router.push("/become-mentor"),
         },
       ],
     );
@@ -442,54 +457,56 @@ export default function WalletTab() {
 
         {/* Withdraw earnings */}
         <Text style={sectionHeader(colors)}>Mentor earnings</Text>
-        <Card>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
+        <Pressable onPress={handleEarnings}>
+          <Card>
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 14,
-                backgroundColor: "#DDF5EE",
+                flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 14,
               }}
             >
-              <Feather name="dollar-sign" size={20} color="#0E6F5A" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
+              <View
                 style={{
-                  fontFamily: "Inter_700Bold",
-                  fontSize: 15,
-                  color: colors.foreground,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: "#DDF5EE",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                Withdraw to UPI / bKash
-              </Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_400Regular",
-                  fontSize: 13,
-                  color: colors.mutedForeground,
-                  marginTop: 2,
-                }}
-              >
-                Become a mentor first to start earning
-              </Text>
+                <Feather name="dollar-sign" size={20} color="#0E6F5A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 15,
+                    color: colors.foreground,
+                  }}
+                >
+                  Withdraw to UPI / bKash
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 13,
+                    color: colors.mutedForeground,
+                    marginTop: 2,
+                  }}
+                >
+                  Become a mentor first to start earning
+                </Text>
+              </View>
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={colors.mutedForeground}
+              />
             </View>
-            <Feather
-              name="chevron-right"
-              size={20}
-              color={colors.mutedForeground}
-            />
-          </View>
-        </Card>
+          </Card>
+        </Pressable>
       </ScrollView>
     </View>
   );

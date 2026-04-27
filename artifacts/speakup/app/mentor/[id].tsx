@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
@@ -14,6 +14,7 @@ import { Pressable } from "@/components/Pressable";
 import { useApp } from "@/context/AppContext";
 import { MENTORS } from "@/data/mentors";
 import { useColors } from "@/hooks/useColors";
+import { showAlert } from "@/utils/alert";
 
 const SLOTS = ["10:00 AM", "12:30 PM", "3:00 PM", "5:30 PM", "8:00 PM"];
 
@@ -48,17 +49,17 @@ export default function MentorDetail() {
 
   const handleHelpNow = async () => {
     if (state.coins < mentor.pricePer10Min) {
-      Alert.alert(
+      showAlert(
         "Not enough coins",
         `You need ${mentor.pricePer10Min} coins for a 10-minute session.`,
         [
-          { text: "OK" },
+          { text: "OK", style: "cancel" },
           { text: "Earn coins", onPress: () => router.push("/(tabs)/wallet") },
         ],
       );
       return;
     }
-    Alert.alert(
+    showAlert(
       "Start session?",
       `${mentor.pricePer10Min} coins will be charged for 10 minutes with ${mentor.name}.`,
       [
@@ -85,7 +86,7 @@ export default function MentorDetail() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
       () => undefined,
     );
-    Alert.alert(
+    showAlert(
       "Booked!",
       `Your session with ${mentor.name} is confirmed for ${slot}. We'll notify you 5 minutes before.`,
     );

@@ -4,7 +4,6 @@ import { router, Stack } from "expo-router";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   Easing,
   Platform,
@@ -22,6 +21,7 @@ import { Card } from "@/components/Card";
 import { useApp } from "@/context/AppContext";
 import { AI_FEEDBACK, AI_SUGGESTIONS, PARTNER_LINES } from "@/data/aiTips";
 import { useColors } from "@/hooks/useColors";
+import { showAlert } from "@/utils/alert";
 
 type Stage = "matching" | "in-call" | "ended";
 
@@ -126,7 +126,7 @@ export default function PracticeScreen() {
       router.back();
       return;
     }
-    Alert.alert("End call?", "We'll save your progress and show feedback.", [
+    showAlert("End call?", "We'll save your progress and show feedback.", [
       { text: "Keep talking", style: "cancel" },
       { text: "End", style: "destructive", onPress: endCall },
     ]);
@@ -227,12 +227,16 @@ export default function PracticeScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: 20,
-                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backgroundColor: "#16A085",
                   alignItems: "center",
                   justifyContent: "center",
+                  shadowColor: "#16A085",
+                  shadowOpacity: 0.5,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 0 },
                 }}
               >
-                <Feather name="mic" size={16} color="#FFFFFF" />
+                <Feather name="phone-call" size={16} color="#FFFFFF" />
               </View>
             </View>
 
