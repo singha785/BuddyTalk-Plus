@@ -69,7 +69,15 @@ export default function MentorDetail() {
           onPress: async () => {
             const ok = await spendCoins(mentor.pricePer10Min);
             if (ok) {
-              await recordCall(10);
+              await recordCall({
+                minutes: 10,
+                type: "mentor",
+                partnerName: mentor.name,
+                partnerInitials: mentor.initials,
+                partnerColor: mentor.accentColor,
+                partnerRegion: mentor.region,
+                coinsSpent: mentor.pricePer10Min,
+              });
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Success,
               ).catch(() => undefined);

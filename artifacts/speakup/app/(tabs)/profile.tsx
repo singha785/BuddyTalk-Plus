@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import { Platform, ScrollView, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -121,22 +122,33 @@ export default function ProfileTab() {
           <SettingRow
             icon="user-x"
             label="Blocked users"
-            description="Manage your blocked list"
-            onPress={() =>
-              showAlert("Blocked users", "Nobody is on your block list.")
+            description={
+              state.blockedUsers.length > 0
+                ? `${state.blockedUsers.length} on your block list`
+                : "Nobody is blocked"
             }
+            onPress={() => router.push("/history")}
           />
           <Divider />
           <SettingRow
             icon="alert-circle"
             label="Report a user"
-            description="Tell us about something inappropriate"
-            onPress={() =>
-              showAlert(
-                "Report",
-                "Open a recent call from your call history to report a user.",
-              )
+            description="Open a recent call to report or block"
+            onPress={() => router.push("/history")}
+          />
+        </Card>
+
+        <Text style={sectionHeader(colors)}>Activity</Text>
+        <Card padded={false}>
+          <SettingRow
+            icon="phone"
+            label="Call history"
+            description={
+              state.callHistory.length > 0
+                ? `${state.callHistory.length} session${state.callHistory.length === 1 ? "" : "s"} · tap for AI feedback`
+                : "Your past sessions and AI feedback"
             }
+            onPress={() => router.push("/history")}
           />
         </Card>
 

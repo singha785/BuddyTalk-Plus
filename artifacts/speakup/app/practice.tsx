@@ -25,13 +25,14 @@ import { showAlert } from "@/utils/alert";
 
 type Stage = "matching" | "in-call" | "ended";
 
-const PARTNER = {
-  name: "Anika R.",
-  initials: "AR",
-  region: "Mumbai, India",
-  level: "Intermediate",
-  color: "#FF7A45",
-};
+const PARTNERS = [
+  { name: "Anika R.", initials: "AR", region: "Mumbai, India", level: "Intermediate", color: "#FF7A45" },
+  { name: "Hassan M.", initials: "HM", region: "Lahore, Pakistan", level: "Beginner", color: "#5B3DFF" },
+  { name: "Priya S.", initials: "PS", region: "Delhi, India", level: "Intermediate", color: "#16A085" },
+  { name: "Arjun K.", initials: "AK", region: "Kathmandu, Nepal", level: "Advanced", color: "#F5A524" },
+  { name: "Nadia A.", initials: "NA", region: "Tehran, Iran", level: "Intermediate", color: "#A93D00" },
+  { name: "Tahmid R.", initials: "TR", region: "Dhaka, Bangladesh", level: "Beginner", color: "#0E6F5A" },
+];
 
 export default function PracticeScreen() {
   const colors = useColors();
@@ -43,6 +44,9 @@ export default function PracticeScreen() {
   const [muted, setMuted] = useState<boolean>(false);
   const [transcriptIndex, setTranscriptIndex] = useState<number>(0);
   const [tipIndex, setTipIndex] = useState<number>(0);
+  const [partner, setPartner] = useState(
+    () => PARTNERS[Math.floor(Math.random() * PARTNERS.length)],
+  );
 
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -117,7 +121,18 @@ export default function PracticeScreen() {
     if (stage === "ended") return;
     const minutes = Math.max(1, Math.round(seconds / 60));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    await recordCall(minutes);
+    const good = AI_FEEDBACK.good[Math.floor(Math.random() * AI_FEEDBACK.good.length)];
+    const improve =
+      AI_FEEDBACK.improve[Math.floor(Math.random() * AI_FEEDBACK.improve.length)];
+    await recordCall({
+      minutes,
+      type: "practice",
+      partnerName: partner.name,
+      partnerInitials: partner.initials,
+      partnerColor: partner.color,
+      partnerRegion: partner.region,
+      feedback: { good, improve },
+    });
     setStage("ended");
   };
 
@@ -161,12 +176,14 @@ export default function PracticeScreen() {
         {stage === "ended" ? (
           <EndedView
             seconds={seconds}
+            partnerName={partner.name}
             onDone={() => router.back()}
             onAgain={() => {
               setStage("matching");
               setSeconds(0);
               setTranscriptIndex(0);
               setTipIndex(0);
+              setPartner(PARTNERS[Math.floor(Math.random() * PARTNERS.length)]);
             }}
           />
         ) : (
@@ -256,12 +273,12 @@ export default function PracticeScreen() {
                     width: 160,
                     height: 160,
                     borderRadius: 80,
-                    backgroundColor: PARTNER.color,
+                    backgroundColor: partner.color,
                     opacity: pulseOpacity,
                     transform: [{ scale: pulseScale }],
                   }}
                 />
-                <Avatar initials={PARTNER.initials} size={120} color={PARTNER.color} />
+                <Avatar initials={partner.initials} size={120} color={partner.color} />
               </View>
               <Text
                 style={{
@@ -271,7 +288,7 @@ export default function PracticeScreen() {
                   marginTop: 18,
                 }}
               >
-                {PARTNER.name}
+                {partner.name}
               </Text>
               <Text
                 style={{
@@ -282,7 +299,7 @@ export default function PracticeScreen() {
                   marginTop: 4,
                 }}
               >
-                {PARTNER.region} · {PARTNER.level}
+                {partner.region} · {partner.level}
               </Text>
             </View>
 
@@ -309,7 +326,7 @@ export default function PracticeScreen() {
                       letterSpacing: 1.5,
                     }}
                   >
-                    {PARTNER.name.toUpperCase()} SAYS
+                    {partner.name.toUpperCase()} SAYS
                   </Text>
                   <Text
                     style={{
@@ -453,10 +470,12 @@ function RoundButton({
 
 function EndedView({
   seconds,
+  partnerName,
   onDone,
   onAgain,
 }: {
   seconds: number;
+  partnerName: string;
   onDone: () => void;
   onAgain: () => void;
 }) {
@@ -497,7 +516,7 @@ function EndedView({
           marginTop: 8,
         }}
       >
-        You spoke for {minutes} minute{minutes === 1 ? "" : "s"} with {PARTNER.name}.
+        You spoke for {minutes} minute{minutes === 1 ? "" : "s"} with {partnerName}.
       </Text>
 
       <View style={{ marginTop: 32, gap: 12 }}>

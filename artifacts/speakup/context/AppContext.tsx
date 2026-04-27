@@ -19,6 +19,22 @@ export type UserProfile = {
   onboarded: boolean;
 };
 
+export type CallType = "practice" | "mentor";
+
+export type CallHistoryEntry = {
+  id: string;
+  date: string; // ISO timestamp
+  type: CallType;
+  partnerName: string;
+  partnerInitials: string;
+  partnerColor: string;
+  partnerRegion?: string;
+  durationMinutes: number;
+  coinsSpent?: number;
+  feedback?: { good: string; improve: string };
+  reported?: boolean;
+};
+
 export type AppState = {
   profile: UserProfile;
   coins: number;
@@ -36,6 +52,8 @@ export type AppState = {
   fluency: number; // 0..100
   pronunciation: number;
   confidence: number;
+  callHistory: CallHistoryEntry[];
+  blockedUsers: string[];
 };
 
 const FREE_DAILY_MINUTES = 20;
@@ -69,6 +87,8 @@ const defaultState: AppState = {
   fluency: 30,
   pronunciation: 35,
   confidence: 28,
+  callHistory: [],
+  blockedUsers: [],
 };
 
 type AppContextValue = {
@@ -85,10 +105,22 @@ type AppContextValue = {
   spendCoins: (amount: number) => Promise<boolean>;
   watchAdReward: () => Promise<{ ok: boolean; reason?: string }>;
   consumeFreeMinutes: (minutes: number) => Promise<void>;
-  recordCall: (minutes: number) => Promise<void>;
+  recordCall: (entry: {
+    minutes: number;
+    type: CallType;
+    partnerName: string;
+    partnerInitials: string;
+    partnerColor: string;
+    partnerRegion?: string;
+    coinsSpent?: number;
+    feedback?: { good: string; improve: string };
+  }) => Promise<CallHistoryEntry>;
   completeTask: (taskId: string, reward: number) => Promise<void>;
   completeLesson: (lessonId: string) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
+  blockUser: (name: string) => Promise<void>;
+  unblockUser: (name: string) => Promise<void>;
+  reportCall: (callId: string) => Promise<void>;
   resetAccount: () => Promise<void>;
 };
 
@@ -202,15 +234,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const recordCall = useCallback<AppContextValue["recordCall"]>(
-    async (minutes) => {
+    async (entry) => {
       const rolled = rollDailyResets(state);
+      const newEntry: CallHistoryEntry = {
+        id: `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        date: new Date().toISOString(),
+        type: entry.type,
+        partnerName: entry.partnerName,
+        partnerInitials: entry.partnerInitials,
+        partnerColor: entry.partnerColor,
+        partnerRegion: entry.partnerRegion,
+        durationMinutes: entry.minutes,
+        coinsSpent: entry.coinsSpent,
+        feedback: entry.feedback,
+      };
       await persist({
         ...rolled,
         totalCalls: rolled.totalCalls + 1,
-        totalMinutesSpoken: rolled.totalMinutesSpoken + minutes,
+        totalMinutesSpoken: rolled.totalMinutesSpoken + entry.minutes,
         fluency: Math.min(100, rolled.fluency + 2),
         confidence: Math.min(100, rolled.confidence + 3),
         pronunciation: Math.min(100, rolled.pronunciation + 1),
+        callHistory: [newEntry, ...rolled.callHistory].slice(0, 50),
+      });
+      return newEntry;
+    },
+    [state, persist],
+  );
+
+  const blockUser = useCallback<AppContextValue["blockUser"]>(
+    async (name) => {
+      if (state.blockedUsers.includes(name)) return;
+      await persist({
+        ...state,
+        blockedUsers: [...state.blockedUsers, name],
+      });
+    },
+    [state, persist],
+  );
+
+  const unblockUser = useCallback<AppContextValue["unblockUser"]>(
+    async (name) => {
+      await persist({
+        ...state,
+        blockedUsers: state.blockedUsers.filter((n) => n !== name),
+      });
+    },
+    [state, persist],
+  );
+
+  const reportCall = useCallback<AppContextValue["reportCall"]>(
+    async (callId) => {
+      await persist({
+        ...state,
+        callHistory: state.callHistory.map((c) =>
+          c.id === callId ? { ...c, reported: true } : c,
+        ),
       });
     },
     [state, persist],
@@ -277,6 +356,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeTask,
       completeLesson,
       setPremium,
+      blockUser,
+      unblockUser,
+      reportCall,
       resetAccount,
     };
   }, [
@@ -291,6 +373,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     completeTask,
     completeLesson,
     setPremium,
+    blockUser,
+    unblockUser,
+    reportCall,
     resetAccount,
   ]);
 
