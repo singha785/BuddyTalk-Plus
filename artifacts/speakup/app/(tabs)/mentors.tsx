@@ -10,11 +10,13 @@ import { CoinBadge } from "@/components/CoinBadge";
 import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { MENTORS } from "@/data/mentors";
+import { getPresence, statusColor } from "@/data/presence";
 import { useColors } from "@/hooks/useColors";
+import { usePresenceTick } from "@/hooks/usePresenceTick";
 
 const TABS = [
+  { id: "live", label: "Live now" },
   { id: "all", label: "All" },
-  { id: "online", label: "Online now" },
   { id: "Pro Mentor", label: "Pro" },
   { id: "Mentor", label: "Mentor" },
   { id: "Helper", label: "Helper" },
@@ -23,13 +25,35 @@ const TABS = [
 export default function MentorsTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("all");
+  const now = usePresenceTick();
+  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("live");
+
+  const enriched = useMemo(
+    () =>
+      MENTORS.map((m) => ({
+        mentor: m,
+        presence: getPresence(m.id, m.online, now),
+      })),
+    [now],
+  );
+
+  const liveCount = enriched.filter((e) => e.presence.isLive).length;
 
   const list = useMemo(() => {
-    if (tab === "all") return MENTORS;
-    if (tab === "online") return MENTORS.filter((m) => m.online);
-    return MENTORS.filter((m) => m.level === tab);
-  }, [tab]);
+    let rows = enriched;
+    if (tab === "live") rows = enriched.filter((e) => e.presence.isLive);
+    else if (tab !== "all")
+      rows = enriched.filter((e) => e.mentor.level === tab);
+    return [...rows].sort((a, b) => {
+      const order: Record<string, number> = {
+        live: 0,
+        "in-call": 1,
+        away: 2,
+        offline: 3,
+      };
+      return order[a.presence.status] - order[b.presence.status];
+    });
+  }, [enriched, tab]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -58,12 +82,64 @@ export default function MentorsTab() {
             marginTop: 4,
           }}
         >
-          Talk to a real mentor or help others to earn coins.
+          Real people, available to talk right now.
         </Text>
+
+        {/* Live banner */}
+        <View style={{ marginTop: 16 }}>
+          <Card>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: liveCount > 0 ? "#DDF5EE" : colors.muted,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    backgroundColor: liveCount > 0 ? "#16A085" : "#9CA3AF",
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 15,
+                    color: colors.foreground,
+                  }}
+                >
+                  {liveCount > 0
+                    ? `${liveCount} mentor${liveCount === 1 ? "" : "s"} live now`
+                    : "No mentors live right now"}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                    marginTop: 2,
+                  }}
+                >
+                  {liveCount > 0
+                    ? "Tap a green-dot mentor to call instantly."
+                    : "Try again in a few minutes — presence updates every 30s."}
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </View>
 
         <Pressable
           onPress={() => router.push("/become-mentor")}
-          style={{ marginTop: 18 }}
+          style={{ marginTop: 12 }}
         >
           <Card>
             <View
@@ -78,12 +154,12 @@ export default function MentorsTab() {
                   width: 48,
                   height: 48,
                   borderRadius: 14,
-                  backgroundColor: "#DDF5EE",
+                  backgroundColor: "#FFE9DD",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Feather name="award" size={22} color="#0E6F5A" />
+                <Feather name="award" size={22} color="#A93D00" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -93,7 +169,7 @@ export default function MentorsTab() {
                     color: colors.foreground,
                   }}
                 >
-                  Become a mentor
+                  Become a live mentor
                 </Text>
                 <Text
                   style={{
@@ -103,7 +179,7 @@ export default function MentorsTab() {
                     marginTop: 2,
                   }}
                 >
-                  Take a quick test and earn coins from sessions
+                  Pass a quick test, go live, earn coins
                 </Text>
               </View>
               <Feather
@@ -122,6 +198,7 @@ export default function MentorsTab() {
         >
           {TABS.map((t) => {
             const active = tab === t.id;
+            const isLiveTab = t.id === "live";
             return (
               <Pressable key={t.id} onPress={() => setTab(t.id)}>
                 <View
@@ -132,8 +209,21 @@ export default function MentorsTab() {
                     backgroundColor: active ? colors.primary : colors.card,
                     borderWidth: 1,
                     borderColor: active ? colors.primary : colors.border,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
+                  {isLiveTab ? (
+                    <View
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 3.5,
+                        backgroundColor: active ? "#FFFFFF" : "#16A085",
+                      }}
+                    />
+                  ) : null}
                   <Text
                     style={{
                       fontFamily: "Inter_600SemiBold",
@@ -142,6 +232,7 @@ export default function MentorsTab() {
                     }}
                   >
                     {t.label}
+                    {isLiveTab && liveCount > 0 ? ` (${liveCount})` : ""}
                   </Text>
                 </View>
               </Pressable>
@@ -149,21 +240,42 @@ export default function MentorsTab() {
           })}
         </ScrollView>
 
+        {list.length === 0 ? (
+          <Card>
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 14,
+                color: colors.foreground,
+                textAlign: "center",
+              }}
+            >
+              No mentors here right now
+            </Text>
+            <Text
+              style={{
+                fontFamily: "Inter_400Regular",
+                fontSize: 12,
+                color: colors.mutedForeground,
+                marginTop: 6,
+                textAlign: "center",
+              }}
+            >
+              Try the "All" tab to see who's coming back soon.
+            </Text>
+          </Card>
+        ) : null}
+
         <View style={{ gap: 12 }}>
-          {list.map((m) => (
+          {list.map(({ mentor: m, presence }) => (
             <Pressable key={m.id} onPress={() => router.push(`/mentor/${m.id}`)}>
               <Card>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    gap: 14,
-                  }}
-                >
+                <View style={{ flexDirection: "row", gap: 14 }}>
                   <Avatar
                     initials={m.initials}
                     size={56}
                     color={m.accentColor}
-                    online={m.online}
+                    status={presence.status}
                   />
                   <View style={{ flex: 1 }}>
                     <View
@@ -187,15 +299,48 @@ export default function MentorsTab() {
                         tone={m.level === "Pro Mentor" ? "primary" : "default"}
                       />
                     </View>
+
+                    {/* Live status row */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: 6,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: statusColor(presence.status),
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 12,
+                          color: statusColor(presence.status),
+                        }}
+                      >
+                        {presence.label}
+                      </Text>
+                    </View>
+
                     <View
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 8,
-                        marginTop: 4,
+                        marginTop: 6,
                       }}
                     >
-                      <Feather name="map-pin" size={11} color={colors.mutedForeground} />
+                      <Feather
+                        name="map-pin"
+                        size={11}
+                        color={colors.mutedForeground}
+                      />
                       <Text
                         style={{
                           fontFamily: "Inter_400Regular",

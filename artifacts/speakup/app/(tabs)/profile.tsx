@@ -55,7 +55,7 @@ export default function ProfileTab() {
               marginTop: 14,
             }}
           >
-            {state.profile.name || "SpeakUp Learner"}
+            {state.profile.name || "BuddyTalk+ Learner"}
           </Text>
           <Text
             style={{
@@ -184,7 +184,7 @@ export default function ProfileTab() {
             label="Help & support"
             description="FAQs and contact"
             onPress={() =>
-              showAlert("Support", "Email support@speakup.app — we'll reply within 24h.")
+              showAlert("Support", "Email hello@buddytalk.app — we'll reply within 24h.")
             }
           />
           <Divider />
@@ -219,7 +219,7 @@ export default function ProfileTab() {
             marginTop: 28,
           }}
         >
-          SpeakUp v1.0 · Made for South Asia
+          BuddyTalk+ v1.0 · Made for South Asia
         </Text>
       </ScrollView>
     </View>

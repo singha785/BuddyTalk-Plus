@@ -13,7 +13,9 @@ import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { useApp } from "@/context/AppContext";
 import { MENTORS } from "@/data/mentors";
+import { getPresence, statusColor } from "@/data/presence";
 import { useColors } from "@/hooks/useColors";
+import { usePresenceTick } from "@/hooks/usePresenceTick";
 import { showAlert } from "@/utils/alert";
 
 const SLOTS = ["10:00 AM", "12:30 PM", "3:00 PM", "5:30 PM", "8:00 PM"];
@@ -25,6 +27,8 @@ export default function MentorDetail() {
   const mentor = MENTORS.find((m) => m.id === id);
   const { state, spendCoins, recordCall } = useApp();
   const [slot, setSlot] = useState<string | null>(null);
+  const now = usePresenceTick();
+  const presence = mentor ? getPresence(mentor.id, mentor.online, now) : null;
 
   if (!mentor) {
     return (
@@ -48,6 +52,13 @@ export default function MentorDetail() {
   }
 
   const handleHelpNow = async () => {
+    if (presence && !presence.callable) {
+      showAlert(
+        "Mentor not available",
+        presence.label + ". Try a Live mentor or book a time slot below.",
+      );
+      return;
+    }
     if (state.coins < mentor.pricePer10Min) {
       showAlert(
         "Not enough coins",
@@ -124,7 +135,7 @@ export default function MentorDetail() {
               initials={mentor.initials}
               size={104}
               color={mentor.accentColor}
-              online={mentor.online}
+              status={presence?.status}
             />
             <Text
               style={{
@@ -166,8 +177,41 @@ export default function MentorDetail() {
                 label={mentor.level}
                 tone={mentor.level === "Pro Mentor" ? "primary" : "default"}
               />
-              {mentor.online ? <Pill label="Online" tone="success" /> : null}
             </View>
+            {presence ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 999,
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: statusColor(presence.status),
+                  }}
+                />
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 12,
+                    color: statusColor(presence.status),
+                  }}
+                >
+                  {presence.label}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View
@@ -304,17 +348,20 @@ export default function MentorDetail() {
           </ScrollView>
 
           <View style={{ marginTop: 20, gap: 10 }}>
-            {mentor.online ? (
-              <View>
-                <Button
-                  label={`Help now · ${mentor.pricePer10Min} coins`}
-                  icon="phone-call"
-                  onPress={handleHelpNow}
-                  fullWidth
-                  size="lg"
-                />
-              </View>
-            ) : null}
+            <View>
+              <Button
+                label={
+                  presence?.callable
+                    ? `Call live · ${mentor.pricePer10Min} coins`
+                    : presence?.shortLabel ?? "Not available"
+                }
+                icon="phone-call"
+                onPress={handleHelpNow}
+                disabled={!presence?.callable}
+                fullWidth
+                size="lg"
+              />
+            </View>
             <Button
               label={slot ? `Book ${slot}` : "Pick a time slot"}
               icon="calendar"

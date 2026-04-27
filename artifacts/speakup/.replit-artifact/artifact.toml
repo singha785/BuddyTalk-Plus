@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "SpeakUp — English Practice"
+title = "BuddyTalk+ — Live English Practice"
 version = "1.0.0"
 id = "artifacts/speakup"
 router = "expo-domain"

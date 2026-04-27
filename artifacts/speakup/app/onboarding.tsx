@@ -105,7 +105,7 @@ export default function Onboarding() {
 
           {step === 0 ? (
             <View style={{ marginTop: 60, paddingHorizontal: 6 }}>
-              <Text style={styles.heroEyebrow}>SpeakUp</Text>
+              <Text style={styles.heroEyebrow}>BuddyTalk+</Text>
               <Text style={styles.heroTitle}>
                 Speak English{"\n"}with confidence.
               </Text>

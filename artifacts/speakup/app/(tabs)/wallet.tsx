@@ -93,7 +93,7 @@ export default function WalletTab() {
       return;
     }
     showAlert(
-      "SpeakUp Premium",
+      "BuddyTalk+ Premium",
       "Unlock 40 daily minutes, smarter matches, fewer ads — ₹29/month.",
       [
         { text: "Maybe later", style: "cancel" },
@@ -429,7 +429,7 @@ export default function WalletTab() {
                 fontSize: 22,
               }}
             >
-              SpeakUp Premium
+              BuddyTalk+ Premium
             </Text>
             <Feather name="award" size={28} color="#FFFFFF" />
           </View>

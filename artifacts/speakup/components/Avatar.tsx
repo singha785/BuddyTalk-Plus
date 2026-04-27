@@ -1,14 +1,25 @@
 import React from "react";
 import { Text, View } from "react-native";
 
+type Status = "live" | "in-call" | "away" | "offline";
+
 type Props = {
   initials: string;
   size?: number;
   color?: string;
   online?: boolean;
+  status?: Status;
 };
 
-export function Avatar({ initials, size = 48, color = "#5B3DFF", online }: Props) {
+const STATUS_COLORS: Record<Status, string> = {
+  live: "#16A085",
+  "in-call": "#FF7A45",
+  away: "#F5A524",
+  offline: "#9CA3AF",
+};
+
+export function Avatar({ initials, size = 48, color = "#5B3DFF", online, status }: Props) {
+  const effectiveStatus: Status | undefined = status ?? (online ? "live" : undefined);
   return (
     <View>
       <View
@@ -32,7 +43,7 @@ export function Avatar({ initials, size = 48, color = "#5B3DFF", online }: Props
           {initials}
         </Text>
       </View>
-      {online ? (
+      {effectiveStatus ? (
         <View
           style={{
             position: "absolute",
@@ -41,7 +52,7 @@ export function Avatar({ initials, size = 48, color = "#5B3DFF", online }: Props
             width: size * 0.28,
             height: size * 0.28,
             borderRadius: size * 0.14,
-            backgroundColor: "#16A085",
+            backgroundColor: STATUS_COLORS[effectiveStatus],
             borderWidth: 2,
             borderColor: "#FFFFFF",
           }}

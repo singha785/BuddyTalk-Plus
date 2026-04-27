@@ -229,7 +229,7 @@ export default function BecomeMentor() {
                     lineHeight: 18,
                   }}
                 >
-                  SpeakUp keeps a 12-coin commission per session to support
+                  BuddyTalk+ keeps a 12-coin commission per session to support
                   matching, payments and safety.
                 </Text>
               </View>
