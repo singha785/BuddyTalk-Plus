@@ -1,0 +1,230 @@
+Create a scalable mobile application focused on English speaking practice for users in South Asia (India, Pakistan, Bangladesh, Nepal, Afghanistan, Iran, and nearby regions). The app should combine real-time human interaction, AI assistance, and a built-in earning ecosystem.
+
+APP PURPOSE:
+The app helps users improve spoken English by connecting them with real people and AI while also allowing advanced users to earn by teaching beginners.
+
+TARGET USERS:
+
+* Beginners with zero English knowledge
+* Intermediate learners wanting practice
+* Advanced users who want to become mentors and earn money
+
+---
+
+CORE FEATURES:
+
+1. USER AUTHENTICATION:
+
+* Simple login via Google or Phone OTP
+* Minimal friction onboarding
+
+2. USER ONBOARDING:
+
+* Ask user goals (job, study, daily conversation)
+* Select level (Beginner / Intermediate / Advanced)
+* Optional AI voice test to detect speaking level
+
+3. HOME DASHBOARD:
+
+* Show daily free talk time (20 minutes)
+* Buttons:
+
+  * Start Talking
+  * Daily Tasks
+  * Find Mentor
+  * Wallet (Coins)
+* Clean and beginner-friendly UI
+
+---
+
+4. RANDOM LIVE TALK SYSTEM:
+
+* Connect users with random online users
+* Match based on:
+
+  * Language level
+  * Goals
+  * Region (optional)
+* Audio-only calls (no video for safety)
+* Real-time connection using WebRTC
+
+---
+
+5. AI CONVERSATION ASSISTANT:
+
+* Suggest sentences during calls
+* Correct basic mistakes
+* Provide post-call feedback (1–2 improvements only)
+
+---
+
+6. BEGINNER LEARNING MODULE:
+
+* Basic English lessons:
+
+  * Alphabets
+  * Common sentences
+  * Daily usage phrases
+* Voice repeat practice
+
+---
+
+7. DAILY TASK SYSTEM:
+
+* 5–10 minute challenges
+* Rewards in coins
+* Streak tracking
+
+---
+
+8. COIN SYSTEM (ECONOMY ENGINE):
+
+* Users earn coins by:
+
+  * Watching ads
+  * Completing tasks
+  * Daily login
+* Users spend coins on:
+
+  * Extra talk time
+  * Mentor sessions
+
+COIN VALUES:
+
+* ₹10 = 20 coins
+* ₹20 = 50 coins
+
+USAGE:
+
+* 1 minute talk = 2 coins
+* 10-minute mentor session = 30 coins
+
+---
+
+9. ADS-BASED COINS:
+
+* Rewarded ads only (no forced ads)
+* 1 ad = 5 coins
+* Daily limit = 10 ads
+* Cooldown between ads
+
+---
+
+10. PREMIUM SUBSCRIPTION:
+
+* ₹29/month
+* Benefits:
+
+  * Extra daily minutes
+  * Better matching
+  * Reduced ads
+
+---
+
+11. MENTOR SYSTEM (EARNING FEATURE):
+
+Mentor Levels:
+
+* Learner
+* Helper
+* Mentor
+* Pro Mentor
+
+Selection:
+
+* AI-based speaking test
+* Qualification required
+
+Features:
+
+* Mentors set availability
+* Users can book sessions
+* Instant “Help Now” call option
+
+EARNING:
+
+* 10 min session = 30 coins
+* Mentor earns = 18 coins
+* App commission = 12 coins
+
+COIN TO MONEY:
+
+* Allow coin withdrawal via local payment methods (future-ready)
+
+RATING SYSTEM:
+
+* 5-star ratings
+* Feedback system
+* High rating = more visibility
+
+---
+
+12. SAFETY FEATURES:
+
+* Report/block users
+* AI moderation for abusive language
+* Optional safe mode (e.g., gender-based matching)
+
+---
+
+13. RETENTION SYSTEM:
+
+* Daily notifications
+* Streak rewards
+* Progress tracking (fluency, confidence, pronunciation)
+
+---
+
+14. PAYMENT SYSTEM:
+
+* Google Play in-app purchases for coins and premium
+* Multi-country support
+* Ads-based earning option for users without payment access
+
+---
+
+15. USER JOURNEY FLOW:
+
+* First open → simple onboarding
+* User selects level and goal
+* Lands on home dashboard
+* Starts first call instantly
+* Enjoys free 20 minutes
+* After limit:
+
+  * Watch ad OR
+  * Buy coins OR
+  * Subscribe premium
+* Encouraged to try mentor
+* Daily tasks bring user back
+
+---
+
+16. UI/UX DESIGN:
+
+* Clean, minimal, beginner-friendly
+* Large buttons
+* Fast loading
+* Optimized for low internet
+
+---
+
+17. TECH STACK SUGGESTION:
+
+* Frontend: Flutter
+* Backend: Firebase / Supabase
+* Real-time audio: WebRTC
+* AI: Speech-to-text + NLP correction
+
+---
+
+18. SCALABILITY:
+
+* Support thousands of concurrent users
+* Efficient matching system
+* Low bandwidth optimization
+
+---
+
+GOAL:
+Build an engaging, addictive, and scalable English-speaking ecosystem where users learn, practice, and earn in a single platform.

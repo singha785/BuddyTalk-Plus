@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "HTH4uvcYvAh-4VgbZ590U"
+uri = "file://artifacts/speakup/assets/images/icon.png"
+type = "image"
+title = "speakup app icon"

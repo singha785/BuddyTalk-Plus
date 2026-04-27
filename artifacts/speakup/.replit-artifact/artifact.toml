@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "SpeakUp — English Practice"
+version = "1.0.0"
+id = "artifacts/speakup"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 21621
+
+[services.development]
+run = "pnpm --filter @workspace/speakup run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/speakup", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/speakup", "run", "serve" ]
+
+[services.env]
+PORT = "21621"
+BASE_PATH = "/"
