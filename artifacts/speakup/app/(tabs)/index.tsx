@@ -1,8 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef } from "react";
+import {
+  Animated,
+  Easing,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
@@ -11,23 +18,28 @@ import { CoinBadge } from "@/components/CoinBadge";
 import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
-import { SectionHeader } from "@/components/SectionHeader";
 import { CONSTANTS, useApp } from "@/context/AppContext";
-import { DAILY_TASKS } from "@/data/tasks";
 import { LESSONS } from "@/data/lessons";
 import { MENTORS } from "@/data/mentors";
+import { getPresence, statusColor } from "@/data/presence";
+import { DAILY_TASKS } from "@/data/tasks";
 import { useColors } from "@/hooks/useColors";
+import { usePresenceTick } from "@/hooks/usePresenceTick";
 
 export default function Home() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { state, freeMinutesRemaining } = useApp();
+  const now = usePresenceTick();
 
   const firstName = state.profile.name?.split(" ")[0] || "Friend";
   const totalAllowed = state.premium
     ? CONSTANTS.FREE_DAILY_MINUTES + 20
     : CONSTANTS.FREE_DAILY_MINUTES;
-  const usedPct = ((totalAllowed - freeMinutesRemaining) / totalAllowed) * 100;
+  const usedPct = Math.min(
+    100,
+    ((totalAllowed - freeMinutesRemaining) / totalAllowed) * 100,
+  );
 
   const undoneTasks = DAILY_TASKS.filter(
     (t) => !state.completedTasks.includes(t.id),
@@ -37,7 +49,13 @@ export default function Home() {
     (l) => l.level === state.profile.level || state.profile.level === null,
   ).slice(0, 4);
 
-  const onlineMentors = MENTORS.filter((m) => m.online).slice(0, 4);
+  const liveMentors = useMemo(
+    () =>
+      MENTORS.map((m) => ({ mentor: m, presence: getPresence(m.id, m.online, now) }))
+        .filter((x) => x.presence.isLive)
+        .slice(0, 6),
+    [now],
+  );
 
   const greeting = (() => {
     const hr = new Date().getHours();
@@ -46,8 +64,67 @@ export default function Home() {
     return "Good evening";
   })();
 
+  // Pulse animation for the LIVE dot
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  const pulseScale = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 2.4],
+  });
+  const pulseOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.55, 0],
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Decorative background orbs */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: -120,
+          right: -80,
+          width: 320,
+          height: 320,
+          borderRadius: 160,
+          backgroundColor: "#5B3DFF",
+          opacity: 0.12,
+        }}
+      />
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 120,
+          left: -100,
+          width: 240,
+          height: 240,
+          borderRadius: 120,
+          backgroundColor: "#FF7A45",
+          opacity: 0.1,
+        }}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -65,26 +142,57 @@ export default function Home() {
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Avatar
-                initials={(firstName[0] || "S").toUpperCase()}
-                size={44}
-                color={colors.primary}
-              />
+              <View
+                style={{
+                  borderRadius: 24,
+                  padding: 2,
+                  backgroundColor: "#FFFFFF",
+                  shadowColor: "#5B3DFF",
+                  shadowOpacity: 0.25,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
+                }}
+              >
+                <LinearGradient
+                  colors={["#5B3DFF", "#FF7A45"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontFamily: "Inter_700Bold",
+                      fontSize: 17,
+                    }}
+                  >
+                    {(firstName[0] || "S").toUpperCase()}
+                  </Text>
+                </LinearGradient>
+              </View>
               <View>
                 <Text
                   style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 13,
+                    fontFamily: "Inter_500Medium",
+                    fontSize: 12,
                     color: colors.mutedForeground,
                   }}
                 >
-                  {greeting}
+                  {greeting} 👋
                 </Text>
                 <Text
                   style={{
                     fontFamily: "Inter_700Bold",
-                    fontSize: 18,
+                    fontSize: 19,
                     color: colors.foreground,
+                    marginTop: 1,
                   }}
                 >
                   {firstName}
@@ -99,7 +207,7 @@ export default function Home() {
                   gap: 5,
                   backgroundColor: "#FFE9DD",
                   paddingHorizontal: 10,
-                  paddingVertical: 6,
+                  paddingVertical: 7,
                   borderRadius: 999,
                 }}
               >
@@ -118,339 +226,565 @@ export default function Home() {
             </View>
           </View>
 
-          {/* Talk time card */}
+          {/* HERO — Talk now */}
           <View style={{ marginTop: 22 }}>
             <Pressable onPress={() => router.push("/practice")}>
-              <LinearGradient
-                colors={["#5B3DFF", "#7456FF", "#FF7A45"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <View
                 style={{
-                  borderRadius: 24,
-                  padding: 22,
+                  borderRadius: 28,
                   overflow: "hidden",
+                  shadowColor: "#5B3DFF",
+                  shadowOpacity: 0.35,
+                  shadowRadius: 24,
+                  shadowOffset: { width: 0, height: 12 },
+                  elevation: 8,
                 }}
               >
-                <View
+                <LinearGradient
+                  colors={["#3A1F9E", "#5B3DFF", "#FF7A45"]}
+                  start={{ x: 0.0, y: 0.0 }}
+                  end={{ x: 1.0, y: 1.0 }}
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
+                    padding: 22,
+                    paddingTop: 22,
                   }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Pill label="Today" tone="primary" style={{ backgroundColor: "rgba(255,255,255,0.25)" }} />
+                  {/* Decorative inner orbs */}
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      top: -40,
+                      right: -40,
+                      width: 180,
+                      height: 180,
+                      borderRadius: 90,
+                      backgroundColor: "#FFFFFF",
+                      opacity: 0.08,
+                    }}
+                  />
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      bottom: -50,
+                      left: -30,
+                      width: 140,
+                      height: 140,
+                      borderRadius: 70,
+                      backgroundColor: "#FFFFFF",
+                      opacity: 0.06,
+                    }}
+                  />
+
+                  {/* Live row */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <View style={{ width: 10, height: 10, justifyContent: "center", alignItems: "center" }}>
+                      <Animated.View
+                        style={{
+                          position: "absolute",
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: "#9CFCB8",
+                          transform: [{ scale: pulseScale }],
+                          opacity: pulseOpacity,
+                        }}
+                      />
+                      <View
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: "#34D27D",
+                        }}
+                      />
+                    </View>
                     <Text
                       style={{
                         color: "#FFFFFF",
                         fontFamily: "Inter_700Bold",
-                        fontSize: 28,
-                        marginTop: 12,
-                        lineHeight: 32,
+                        fontSize: 12,
+                        letterSpacing: 0.6,
                       }}
                     >
-                      {freeMinutesRemaining} min{"\n"}left to talk
-                    </Text>
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        opacity: 0.92,
-                        fontFamily: "Inter_400Regular",
-                        fontSize: 13,
-                        marginTop: 8,
-                      }}
-                    >
-                      Tap to start a free practice call
+                      {liveMentors.length > 0
+                        ? `${liveMentors.length} BUDDIES LIVE NOW`
+                        : "WARMING UP THE LINE"}
                     </Text>
                   </View>
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Feather name="mic" size={26} color="#FFFFFF" />
-                  </View>
-                </View>
-                <View style={{ marginTop: 18 }}>
-                  <ProgressBar
-                    value={usedPct}
-                    height={6}
-                    color="#FFFFFF"
-                    trackColor="rgba(255,255,255,0.25)"
-                  />
-                </View>
-              </LinearGradient>
-            </Pressable>
-          </View>
 
-          {/* Quick actions */}
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-              marginTop: 16,
-            }}
-          >
-            <QuickAction
-              icon="zap"
-              label="Daily Tasks"
-              color="#FF7A45"
-              onPress={() => router.push("/tasks")}
-            />
-            <QuickAction
-              icon="users"
-              label="Find Mentor"
-              color="#16A085"
-              onPress={() => router.push("/(tabs)/mentors")}
-            />
-            <QuickAction
-              icon="book"
-              label="Lessons"
-              color="#5B3DFF"
-              onPress={() => router.push("/(tabs)/learn")}
-            />
-            <QuickAction
-              icon="gift"
-              label="Wallet"
-              color="#F5A524"
-              onPress={() => router.push("/(tabs)/wallet")}
-            />
-          </View>
-        </View>
-
-        {/* AI Coach card */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <SectionHeader title="Your AI coach" />
-          <Card>
-            <View style={{ flexDirection: "row", gap: 14 }}>
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 16,
-                  backgroundColor: "#EAE2FF",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Feather name="cpu" size={22} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    fontSize: 15,
-                    color: colors.foreground,
-                  }}
-                >
-                  Quick warm-up before your call
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 13,
-                    color: colors.mutedForeground,
-                    marginTop: 4,
-                    lineHeight: 18,
-                  }}
-                >
-                  Try reading aloud: "I am learning English and I want to speak
-                  with confidence."
-                </Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        {/* Daily Tasks */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <SectionHeader
-            title="Today's tasks"
-            action={{ label: "See all", onPress: () => router.push("/tasks") }}
-          />
-          <View style={{ gap: 10 }}>
-            {undoneTasks.length === 0 ? (
-              <Card>
-                <View style={{ alignItems: "center", paddingVertical: 12 }}>
-                  <Feather name="check-circle" size={28} color={colors.success} />
                   <Text
                     style={{
-                      fontFamily: "Inter_600SemiBold",
-                      fontSize: 14,
-                      color: colors.foreground,
-                      marginTop: 8,
+                      color: "#FFFFFF",
+                      fontFamily: "Inter_700Bold",
+                      fontSize: 32,
+                      marginTop: 14,
+                      lineHeight: 36,
+                      letterSpacing: -0.5,
                     }}
                   >
-                    All done for today!
+                    Speak English.{"\n"}Earn confidence.
                   </Text>
                   <Text
                     style={{
+                      color: "#FFFFFF",
+                      opacity: 0.88,
                       fontFamily: "Inter_400Regular",
-                      fontSize: 12,
-                      color: colors.mutedForeground,
-                      marginTop: 4,
+                      fontSize: 13,
+                      marginTop: 8,
+                      lineHeight: 18,
                     }}
                   >
-                    Come back tomorrow for new challenges.
+                    {freeMinutesRemaining} free minutes left today · Tap to start a live call
                   </Text>
-                </View>
-              </Card>
-            ) : (
-              undoneTasks.map((t) => (
-                <Pressable key={t.id} onPress={() => router.push("/tasks")}>
-                  <Card>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 12,
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 12,
-                          backgroundColor: "#FFE9DD",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Feather name="target" size={18} color="#FF7A45" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            fontFamily: "Inter_600SemiBold",
-                            fontSize: 14,
-                            color: colors.foreground,
-                          }}
-                        >
-                          {t.title}
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "Inter_400Regular",
-                            fontSize: 12,
-                            color: colors.mutedForeground,
-                            marginTop: 2,
-                          }}
-                        >
-                          {t.minutes} min
-                        </Text>
-                      </View>
-                      <CoinBadge amount={t.reward} size="sm" />
-                    </View>
-                  </Card>
-                </Pressable>
-              ))
-            )}
-          </View>
-        </View>
 
-        {/* Lessons */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <SectionHeader
-            title="Recommended lessons"
-            action={{ label: "Browse", onPress: () => router.push("/(tabs)/learn") }}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingRight: 8 }}
-          >
-            {recommendedLessons.map((l) => {
-              const done = state.completedLessons.includes(l.id);
-              return (
-                <Pressable
-                  key={l.id}
-                  onPress={() => router.push(`/lesson/${l.id}`)}
-                  style={{ width: 200 }}
-                >
-                  <Card>
-                    <View style={{ height: 72, justifyContent: "space-between" }}>
-                      <Pill
-                        label={l.level}
-                        tone={l.level === "Beginner" ? "primary" : l.level === "Intermediate" ? "accent" : "warning"}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: "Inter_700Bold",
-                          fontSize: 15,
-                          color: colors.foreground,
-                          marginTop: 8,
-                        }}
-                        numberOfLines={2}
-                      >
-                        {l.title}
-                      </Text>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 10,
-                        gap: 8,
-                      }}
-                    >
-                      <Feather name="clock" size={12} color={colors.mutedForeground} />
-                      <Text
-                        style={{
-                          fontFamily: "Inter_500Medium",
-                          fontSize: 12,
-                          color: colors.mutedForeground,
-                        }}
-                      >
-                        {l.minutes} min
-                      </Text>
-                      {done ? (
-                        <View style={{ marginLeft: "auto" }}>
-                          <Feather
-                            name="check-circle"
-                            size={14}
-                            color={colors.success}
-                          />
-                        </View>
-                      ) : null}
-                    </View>
-                  </Card>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Mentors */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <SectionHeader
-            title="Mentors online now"
-            action={{ label: "See all", onPress: () => router.push("/(tabs)/mentors") }}
-          />
-          <View style={{ gap: 10 }}>
-            {onlineMentors.map((m) => (
-              <Pressable
-                key={m.id}
-                onPress={() => router.push(`/mentor/${m.id}`)}
-              >
-                <Card>
+                  {/* Big call button */}
                   <View
                     style={{
+                      marginTop: 22,
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 12,
                     }}
                   >
-                    <Avatar
-                      initials={m.initials}
-                      size={48}
-                      color={m.accentColor}
-                      online
+                    <View
+                      style={{
+                        backgroundColor: "#FFFFFF",
+                        borderRadius: 999,
+                        paddingHorizontal: 18,
+                        paddingVertical: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.15,
+                        shadowRadius: 12,
+                        shadowOffset: { width: 0, height: 6 },
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 13,
+                          backgroundColor: "#34D27D",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Feather name="phone-call" size={13} color="#FFFFFF" />
+                      </View>
+                      <Text
+                        style={{
+                          color: "#1A1530",
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        Start a free call
+                      </Text>
+                    </View>
+                    {/* Live mentor avatars */}
+                    {liveMentors.length > 0 ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          marginLeft: 4,
+                        }}
+                      >
+                        {liveMentors.slice(0, 3).map((lm, idx) => (
+                          <View
+                            key={lm.mentor.id}
+                            style={{
+                              marginLeft: idx === 0 ? 0 : -10,
+                              borderWidth: 2,
+                              borderColor: "#FFFFFF",
+                              borderRadius: 999,
+                            }}
+                          >
+                            <Avatar
+                              initials={lm.mentor.initials}
+                              size={28}
+                              color={lm.mentor.accentColor}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {/* Progress bar */}
+                  <View style={{ marginTop: 22 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          opacity: 0.85,
+                          fontFamily: "Inter_500Medium",
+                          fontSize: 11,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        TODAY'S TALK TIME
+                      </Text>
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 11,
+                        }}
+                      >
+                        {totalAllowed - freeMinutesRemaining}/{totalAllowed} min
+                      </Text>
+                    </View>
+                    <ProgressBar
+                      value={usedPct}
+                      height={6}
+                      color="#FFFFFF"
+                      trackColor="rgba(255,255,255,0.22)"
                     />
+                  </View>
+                </LinearGradient>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Quick actions — gradient tiles */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              marginTop: 18,
+            }}
+          >
+            <QuickAction
+              icon="zap"
+              label="Tasks"
+              gradient={["#FFB47A", "#FF7A45"]}
+              onPress={() => router.push("/tasks")}
+            />
+            <QuickAction
+              icon="users"
+              label="Mentors"
+              gradient={["#3FE1B0", "#0E9F7A"]}
+              onPress={() => router.push("/(tabs)/mentors")}
+            />
+            <QuickAction
+              icon="book-open"
+              label="Lessons"
+              gradient={["#7E62FF", "#4A2BE0"]}
+              onPress={() => router.push("/(tabs)/learn")}
+            />
+            <QuickAction
+              icon="gift"
+              label="Wallet"
+              gradient={["#FFD66B", "#E59611"]}
+              onPress={() => router.push("/(tabs)/wallet")}
+            />
+          </View>
+
+          {/* Live mentors strip */}
+          {liveMentors.length > 0 ? (
+            <View style={{ marginTop: 26 }}>
+              <SectionHeaderRow
+                title="Live mentors right now"
+                badge={`${liveMentors.length}`}
+                actionLabel="See all"
+                onAction={() => router.push("/(tabs)/mentors")}
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12, paddingRight: 8, marginTop: 12 }}
+              >
+                {liveMentors.map(({ mentor: m, presence }) => (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => router.push(`/mentor/${m.id}`)}
+                    style={{ width: 168 }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: colors.card,
+                        borderRadius: 22,
+                        padding: 14,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        shadowColor: "#1A1530",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 14,
+                        shadowOffset: { width: 0, height: 6 },
+                        elevation: 1,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Avatar
+                          initials={m.initials}
+                          size={48}
+                          color={m.accentColor}
+                          status={presence.status}
+                        />
+                        <View
+                          style={{
+                            backgroundColor: "#DDF5EE",
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 999,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: "#16A085",
+                            }}
+                          />
+                          <Text
+                            style={{
+                              fontFamily: "Inter_700Bold",
+                              fontSize: 10,
+                              color: "#0E6F5A",
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            LIVE
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 14,
+                          color: colors.foreground,
+                          marginTop: 12,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {m.name}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 11,
+                          color: colors.mutedForeground,
+                          marginTop: 2,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {m.region.split(",")[0]}
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 12,
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 3,
+                          }}
+                        >
+                          <Feather name="star" size={11} color="#F5A524" />
+                          <Text
+                            style={{
+                              fontFamily: "Inter_700Bold",
+                              fontSize: 11,
+                              color: colors.foreground,
+                            }}
+                          >
+                            {m.rating.toFixed(1)}
+                          </Text>
+                        </View>
+                        <CoinBadge amount={m.pricePer10Min} size="sm" />
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Daily mission */}
+          <View style={{ marginTop: 26 }}>
+            <SectionHeaderRow
+              title="Today's missions"
+              actionLabel="See all"
+              onAction={() => router.push("/tasks")}
+            />
+            <View style={{ gap: 10, marginTop: 12 }}>
+              {undoneTasks.length === 0 ? (
+                <Card>
+                  <View style={{ alignItems: "center", paddingVertical: 12 }}>
+                    <View
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: "#DDF5EE",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Feather name="check-circle" size={28} color="#0E6F5A" />
+                    </View>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_700Bold",
+                        fontSize: 15,
+                        color: colors.foreground,
+                        marginTop: 12,
+                      }}
+                    >
+                      All missions done!
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 12,
+                        color: colors.mutedForeground,
+                        marginTop: 4,
+                        textAlign: "center",
+                      }}
+                    >
+                      Come back tomorrow for new ones — your streak is safe.
+                    </Text>
+                  </View>
+                </Card>
+              ) : (
+                undoneTasks.map((t, idx) => (
+                  <Pressable key={t.id} onPress={() => router.push("/tasks")}>
+                    <Card>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 14,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 14,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <LinearGradient
+                            colors={
+                              idx % 3 === 0
+                                ? ["#FFB47A", "#FF7A45"]
+                                : idx % 3 === 1
+                                  ? ["#7E62FF", "#4A2BE0"]
+                                  : ["#3FE1B0", "#0E9F7A"]
+                            }
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={{
+                              flex: 1,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Feather name="target" size={20} color="#FFFFFF" />
+                          </LinearGradient>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontFamily: "Inter_700Bold",
+                              fontSize: 14,
+                              color: colors.foreground,
+                            }}
+                          >
+                            {t.title}
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "Inter_400Regular",
+                              fontSize: 12,
+                              color: colors.mutedForeground,
+                              marginTop: 3,
+                            }}
+                          >
+                            {t.minutes} min · earn coins
+                          </Text>
+                        </View>
+                        <CoinBadge amount={t.reward} size="sm" />
+                      </View>
+                    </Card>
+                  </Pressable>
+                ))
+              )}
+            </View>
+          </View>
+
+          {/* AI Coach */}
+          <View style={{ marginTop: 26 }}>
+            <SectionHeaderRow title="Your AI coach" />
+            <View style={{ marginTop: 12 }}>
+              <View
+                style={{
+                  borderRadius: 22,
+                  overflow: "hidden",
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <LinearGradient
+                  colors={["#F4EFFF", "#FFFFFF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ padding: 18 }}
+                >
+                  <View style={{ flexDirection: "row", gap: 14 }}>
+                    <View
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <LinearGradient
+                        colors={["#7E62FF", "#3A1F9E"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          flex: 1,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Feather name="cpu" size={22} color="#FFFFFF" />
+                      </LinearGradient>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <View
                         style={{
@@ -462,93 +796,232 @@ export default function Home() {
                         <Text
                           style={{
                             fontFamily: "Inter_700Bold",
-                            fontSize: 15,
+                            fontSize: 14,
                             color: colors.foreground,
                           }}
                         >
-                          {m.name}
+                          Quick warm-up
                         </Text>
-                        <Text style={{ fontSize: 11 }}>·</Text>
-                        <Text
-                          style={{
-                            fontFamily: "Inter_500Medium",
-                            fontSize: 12,
-                            color: colors.mutedForeground,
-                          }}
-                        >
-                          {m.region.split(",")[0]}
-                        </Text>
+                        <Pill label="30s" tone="primary" />
                       </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 6,
-                          marginTop: 4,
-                        }}
-                      >
-                        <Feather name="star" size={12} color="#F5A524" />
-                        <Text
-                          style={{
-                            fontFamily: "Inter_600SemiBold",
-                            fontSize: 12,
-                            color: colors.foreground,
-                          }}
-                        >
-                          {m.rating.toFixed(1)}
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "Inter_400Regular",
-                            fontSize: 12,
-                            color: colors.mutedForeground,
-                          }}
-                        >
-                          ({m.sessions})
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        backgroundColor: colors.primary,
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderRadius: 999,
-                      }}
-                    >
-                      <Feather name="phone" size={12} color="#FFFFFF" />
                       <Text
                         style={{
-                          color: "#FFFFFF",
-                          fontFamily: "Inter_600SemiBold",
-                          fontSize: 12,
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 13,
+                          color: colors.mutedForeground,
+                          marginTop: 6,
+                          lineHeight: 18,
+                          fontStyle: "italic",
                         }}
                       >
-                        Call
+                        "I am learning English and I want to speak with confidence."
                       </Text>
                     </View>
                   </View>
-                </Card>
-              </Pressable>
-            ))}
+                </LinearGradient>
+              </View>
+            </View>
+          </View>
+
+          {/* Lessons */}
+          <View style={{ marginTop: 26 }}>
+            <SectionHeaderRow
+              title="Recommended lessons"
+              actionLabel="Browse"
+              onAction={() => router.push("/(tabs)/learn")}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingRight: 8, marginTop: 12 }}
+            >
+              {recommendedLessons.map((l, idx) => {
+                const done = state.completedLessons.includes(l.id);
+                const grads: [string, string][] = [
+                  ["#5B3DFF", "#7E62FF"],
+                  ["#FF7A45", "#FFB47A"],
+                  ["#0E9F7A", "#3FE1B0"],
+                  ["#E59611", "#FFD66B"],
+                ];
+                const grad = grads[idx % grads.length];
+                return (
+                  <Pressable
+                    key={l.id}
+                    onPress={() => router.push(`/lesson/${l.id}`)}
+                    style={{ width: 220 }}
+                  >
+                    <View
+                      style={{
+                        borderRadius: 22,
+                        overflow: "hidden",
+                        backgroundColor: colors.card,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <LinearGradient
+                        colors={grad}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          height: 84,
+                          padding: 14,
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Pill
+                          label={l.level}
+                          style={{ backgroundColor: "rgba(255,255,255,0.28)" }}
+                        />
+                        <Feather
+                          name={done ? "check-circle" : "play-circle"}
+                          size={22}
+                          color="#FFFFFF"
+                          style={{ alignSelf: "flex-end" }}
+                        />
+                      </LinearGradient>
+                      <View style={{ padding: 14 }}>
+                        <Text
+                          style={{
+                            fontFamily: "Inter_700Bold",
+                            fontSize: 14,
+                            color: colors.foreground,
+                            lineHeight: 18,
+                          }}
+                          numberOfLines={2}
+                        >
+                          {l.title}
+                        </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 10,
+                            gap: 6,
+                          }}
+                        >
+                          <Feather
+                            name="clock"
+                            size={11}
+                            color={colors.mutedForeground}
+                          />
+                          <Text
+                            style={{
+                              fontFamily: "Inter_500Medium",
+                              fontSize: 11,
+                              color: colors.mutedForeground,
+                            }}
+                          >
+                            {l.minutes} min
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Progress */}
+          <View style={{ marginTop: 26 }}>
+            <SectionHeaderRow title="Your growth" />
+            <View style={{ marginTop: 12 }}>
+              <Card>
+                <ProgressRow
+                  label="Fluency"
+                  emoji="🗣️"
+                  value={state.fluency}
+                  color={colors.primary}
+                />
+                <View style={{ height: 16 }} />
+                <ProgressRow
+                  label="Pronunciation"
+                  emoji="🎯"
+                  value={state.pronunciation}
+                  color={colors.accent}
+                />
+                <View style={{ height: 16 }} />
+                <ProgressRow
+                  label="Confidence"
+                  emoji="💪"
+                  value={state.confidence}
+                  color="#0E9F7A"
+                />
+              </Card>
+            </View>
           </View>
         </View>
-
-        {/* Progress preview */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <SectionHeader title="Your progress" />
-          <Card>
-            <ProgressRow label="Fluency" value={state.fluency} color={colors.primary} />
-            <View style={{ height: 14 }} />
-            <ProgressRow label="Pronunciation" value={state.pronunciation} color={colors.accent} />
-            <View style={{ height: 14 }} />
-            <ProgressRow label="Confidence" value={state.confidence} color={colors.success} />
-          </Card>
-        </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function SectionHeaderRow({
+  title,
+  badge,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  badge?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text
+          style={{
+            fontFamily: "Inter_700Bold",
+            fontSize: 18,
+            color: colors.foreground,
+            letterSpacing: -0.3,
+          }}
+        >
+          {title}
+        </Text>
+        {badge ? (
+          <View
+            style={{
+              backgroundColor: "#DDF5EE",
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 999,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: "Inter_700Bold",
+                fontSize: 11,
+                color: "#0E6F5A",
+              }}
+            >
+              {badge}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      {actionLabel && onAction ? (
+        <Pressable onPress={onAction}>
+          <Text
+            style={{
+              fontFamily: "Inter_700Bold",
+              fontSize: 13,
+              color: colors.primary,
+            }}
+          >
+            {actionLabel} →
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -556,12 +1029,12 @@ export default function Home() {
 function QuickAction({
   icon,
   label,
-  color,
+  gradient,
   onPress,
 }: {
   icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
-  color: string;
+  gradient: [string, string];
   onPress: () => void;
 }) {
   const colors = useColors();
@@ -575,26 +1048,41 @@ function QuickAction({
           paddingVertical: 14,
           borderWidth: 1,
           borderColor: colors.border,
-          gap: 8,
+          gap: 10,
+          shadowColor: "#1A1530",
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 1,
         }}
       >
         <View
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 12,
-            backgroundColor: color + "22",
-            alignItems: "center",
-            justifyContent: "center",
+            width: 42,
+            height: 42,
+            borderRadius: 14,
+            overflow: "hidden",
           }}
         >
-          <Feather name={icon} size={18} color={color} />
+          <LinearGradient
+            colors={gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Feather name={icon} size={20} color="#FFFFFF" />
+          </LinearGradient>
         </View>
         <Text
           style={{
-            fontFamily: "Inter_600SemiBold",
+            fontFamily: "Inter_700Bold",
             fontSize: 11,
             color: colors.foreground,
+            letterSpacing: 0.2,
           }}
         >
           {label}
@@ -606,10 +1094,12 @@ function QuickAction({
 
 function ProgressRow({
   label,
+  emoji,
   value,
   color,
 }: {
   label: string;
+  emoji: string;
   value: number;
   color: string;
 }) {
@@ -620,31 +1110,33 @@ function ProgressRow({
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          marginBottom: 6,
+          marginBottom: 8,
+          alignItems: "center",
         }}
       >
-        <Text
-          style={{
-            fontFamily: "Inter_600SemiBold",
-            fontSize: 13,
-            color: colors.foreground,
-          }}
-        >
-          {label}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={{ fontSize: 16 }}>{emoji}</Text>
+          <Text
+            style={{
+              fontFamily: "Inter_600SemiBold",
+              fontSize: 14,
+              color: colors.foreground,
+            }}
+          >
+            {label}
+          </Text>
+        </View>
         <Text
           style={{
             fontFamily: "Inter_700Bold",
             fontSize: 13,
-            color: colors.mutedForeground,
+            color,
           }}
         >
           {value}%
         </Text>
       </View>
-      <ProgressBar value={value} color={color} />
+      <ProgressBar value={value} color={color} height={8} />
     </View>
   );
 }
-
-void StyleSheet;
