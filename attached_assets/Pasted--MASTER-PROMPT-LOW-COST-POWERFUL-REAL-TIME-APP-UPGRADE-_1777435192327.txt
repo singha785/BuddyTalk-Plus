@@ -1,0 +1,218 @@
+# 🚀 MASTER PROMPT (LOW COST + POWERFUL REAL-TIME APP UPGRADE)
+
+## 🎯 Goal
+
+Upgrade the existing English speaking app (currently UI/demo) into a **real working app** with:
+
+* Real users
+* Live online presence
+* Real voice calling
+* Smart matching
+* Mentor system
+* Notifications
+
+⚠️ Do NOT rebuild from scratch. Extend the current app.
+
+⚠️ Payment system will be added later (ignore for now).
+
+---
+
+## 🧠 TECH STACK (CHEAP + EASY + POWERFUL)
+
+Use ONLY these tools:
+
+* Backend + Auth + Database:
+  → Firebase (Firestore + Auth + Realtime DB)
+
+* Voice Calling:
+  → LiveKit (self-hosted or cloud free tier)
+
+* Notifications:
+  → Firebase Cloud Messaging (FCM)
+
+---
+
+## 🔐 STEP 1: AUTHENTICATION + USER SYSTEM
+
+Implement Firebase Authentication:
+
+* Phone OTP login (mandatory)
+* Store user profile in Firestore:
+
+  * name
+  * role (learner / mentor)
+  * english level
+  * interests
+  * isOnline (true/false)
+
+---
+
+## 🟢 STEP 2: REAL-TIME ONLINE PRESENCE
+
+Use Firebase Realtime Database:
+
+Features:
+
+* When app opens → set user "online"
+* When app closes → set "offline"
+* Maintain:
+  /presence/{userId} → online/offline
+
+UI:
+
+* Replace all fake "Live Now" with real-time data
+* Show only currently online users
+
+---
+
+## 🎧 STEP 3: VOICE CALLING (CORE FEATURE)
+
+Integrate LiveKit SDK:
+
+Features:
+
+* 1-to-1 voice call
+* Auto join room when matched
+* Call timer (15 min free)
+* Mute/unmute
+* Auto disconnect
+
+Flow:
+
+1. Match found
+2. Generate room
+3. दोनों users join same room
+4. Voice call starts
+
+---
+
+## 🤝 STEP 4: MATCHING SYSTEM (SIMPLE + EFFECTIVE)
+
+Create queue-based matching:
+
+Firestore collection:
+
+* /waitingQueue
+
+Logic:
+
+* User clicks "Start Talking"
+* Add user to queue
+* Match with next available user
+
+Filters:
+
+* Same English level (optional)
+* Mentor priority (if available)
+
+---
+
+## 👨‍🏫 STEP 5: MENTOR SYSTEM (BASIC VERSION)
+
+Create mentor onboarding:
+
+Form fields:
+
+* Name
+* Experience
+* Language level
+* ID upload (store in Firebase Storage)
+
+Flow:
+
+* Mentor applies
+* Status = pending
+* Admin manually approves (via Firestore flag)
+
+After approval:
+
+* Mentor becomes available for matching
+
+---
+
+## 🔔 STEP 6: PUSH NOTIFICATIONS
+
+Use Firebase Cloud Messaging:
+
+Send notifications:
+
+* "You got a match"
+* "Someone is calling you"
+* "Mentor is live now"
+
+Trigger from backend (Cloud Functions optional)
+
+---
+
+## 🛡️ STEP 7: SAFETY + MODERATION
+
+Add basic controls:
+
+* Report user button
+* Block user feature
+
+Firestore collections:
+
+* /reports
+* /blockedUsers
+
+Admin:
+
+* Manually review reports
+
+---
+
+## 📊 DATABASE STRUCTURE (SIMPLE)
+
+Collections:
+
+* users
+* presence
+* waitingQueue
+* sessions
+* reports
+
+---
+
+## ⚙️ IMPORTANT RULES
+
+* Replace ALL dummy data with real Firebase data
+* All UI must reflect real-time backend state
+* Ensure low latency for matching + calling
+* Keep architecture simple and scalable
+
+---
+
+## 🚀 FINAL EXPECTED RESULT
+
+App should allow:
+
+1. User logs in
+2. Sees real online users
+3. Clicks "Start Talking"
+4. Gets matched instantly
+5. Starts real voice call
+6. Can report/block users
+
+---
+
+## ❗ NOTE
+
+* Do NOT add payment system yet
+* Do NOT overcomplicate backend
+* Focus on working real-time system first
+
+---
+
+## 🧩 DEVELOPMENT PRIORITY
+
+1. Auth + Database
+2. Presence system
+3. Matching system
+4. Voice calling
+5. Notifications
+6. Moderation
+
+---
+
+Build this as a **lightweight, scalable, real-time MVP** using Firebase + LiveKit.
