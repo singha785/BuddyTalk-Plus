@@ -15,25 +15,38 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AppProvider, useApp } from "@/context/AppContext";
+import { AppProvider } from "@/context/AppContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { configureApiClient } from "@/lib/apiSetup";
 
 SplashScreen.preventAutoHideAsync();
+
+configureApiClient();
 
 const queryClient = new QueryClient();
 
 function NavigationGate() {
-  const { state, ready } = useApp();
+  const { user, ready } = useAuth();
   const segments = useSegments();
 
   useEffect(() => {
     if (!ready) return;
-    const inOnboarding = segments[0] === "onboarding";
-    if (!state.profile.onboarded && !inOnboarding) {
-      router.replace("/onboarding");
-    } else if (state.profile.onboarded && inOnboarding) {
+    const group = segments[0] as string | undefined;
+    const inAuth = group === "(auth)";
+    const inOnboarding = group === "onboarding";
+
+    if (!user) {
+      if (!inAuth) router.replace("/(auth)/welcome");
+      return;
+    }
+
+    // Authenticated
+    if (!user.onboarded) {
+      if (!inOnboarding) router.replace("/onboarding");
+    } else if (inAuth || inOnboarding) {
       router.replace("/");
     }
-  }, [state.profile.onboarded, ready, segments]);
+  }, [user, ready, segments]);
 
   return (
     <Stack
@@ -42,6 +55,7 @@ function NavigationGate() {
         contentStyle: { backgroundColor: "#F7F5FF" },
       }}
     >
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen
@@ -82,10 +96,12 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <AppProvider>
-                <StatusBar style="auto" />
-                <NavigationGate />
-              </AppProvider>
+              <AuthProvider>
+                <AppProvider>
+                  <StatusBar style="auto" />
+                  <NavigationGate />
+                </AppProvider>
+              </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

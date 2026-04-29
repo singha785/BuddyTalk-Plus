@@ -8,6 +8,8 @@ import React, {
   useState,
 } from "react";
 
+import { useAuth } from "@/context/AuthContext";
+
 export type UserGoal = "job" | "study" | "daily" | "travel";
 export type UserLevel = "Beginner" | "Intermediate" | "Advanced";
 
@@ -147,6 +149,7 @@ function bumpStreak(state: AppState): AppState {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { user: authUser, updateProfile: serverUpdateProfile } = useAuth();
   const [state, setState] = useState<AppState>(defaultState);
   const [ready, setReady] = useState<boolean>(false);
 
@@ -173,6 +176,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // Sync profile mirror from authoritative auth user (after login/refresh).
+  useEffect(() => {
+    if (!authUser) return;
+    setState((prev) => {
+      const next: AppState = {
+        ...prev,
+        profile: {
+          ...prev.profile,
+          name: authUser.name ?? prev.profile.name,
+          goal: (authUser.goal ?? prev.profile.goal) as UserGoal | null,
+          level: (authUser.level ?? prev.profile.level) as UserLevel | null,
+          region: authUser.region ?? prev.profile.region,
+          onboarded: !!authUser.onboarded,
+        },
+      };
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, [authUser]);
+
   const persist = useCallback(async (next: AppState) => {
     setState(next);
     try {
@@ -184,13 +207,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = useCallback<AppContextValue["completeOnboarding"]>(
     async ({ name, goal, level }) => {
+      // Persist to server first; server is the source of truth for the auth user.
+      try {
+        await serverUpdateProfile({ name, goal, level, onboarded: true });
+      } catch {
+        // Continue with local state even if the server call fails so the user
+        // is not stuck. Auth refresh will reconcile later.
+      }
       const next: AppState = {
         ...state,
         profile: { ...state.profile, name, goal, level, onboarded: true },
       };
       await persist(next);
     },
-    [state, persist],
+    [state, persist, serverUpdateProfile],
   );
 
   const addCoins = useCallback<AppContextValue["addCoins"]>(

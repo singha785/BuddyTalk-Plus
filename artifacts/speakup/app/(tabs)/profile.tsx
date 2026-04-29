@@ -10,6 +10,7 @@ import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { showAlert } from "@/utils/alert";
 
@@ -24,6 +25,7 @@ export default function ProfileTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { state, resetAccount } = useApp();
+  const { signOut, user: authUser } = useAuth();
   const [safeMode, setSafeMode] = React.useState<boolean>(true);
   const [notifications, setNotifications] = React.useState<boolean>(true);
 
@@ -205,6 +207,23 @@ export default function ProfileTab() {
                   },
                 ],
               )
+            }
+            destructive
+          />
+          <Divider />
+          <SettingRow
+            icon="log-out"
+            label="Sign out"
+            description={authUser?.email ?? "End this session"}
+            onPress={() =>
+              showAlert("Sign out?", "You'll need to sign in again to talk.", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Sign out",
+                  style: "destructive",
+                  onPress: () => signOut(),
+                },
+              ])
             }
             destructive
           />
