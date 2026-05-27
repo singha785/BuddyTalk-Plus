@@ -1,8 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
@@ -12,38 +12,79 @@ import { CoinBadge } from "@/components/CoinBadge";
 import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { useApp } from "@/context/AppContext";
-import { MENTORS } from "@/data/mentors";
+import { useSocket, type PresenceStatus } from "@/context/SocketContext";
 import { getPresence, statusColor } from "@/data/presence";
 import { useColors } from "@/hooks/useColors";
-import { usePresenceTick } from "@/hooks/usePresenceTick";
 import { showAlert } from "@/utils/alert";
+import type { MentorProfile } from "@workspace/api-client-react";
 
 const SLOTS = ["10:00 AM", "12:30 PM", "3:00 PM", "5:30 PM", "8:00 PM"];
+
+function resolvePresence(
+  mentor: MentorProfile,
+  socketStatus: PresenceStatus | undefined,
+  now: number,
+) {
+  if (socketStatus) {
+    const status = socketStatus;
+    const label =
+      status === "live" ? "Live now"
+        : status === "in-call" ? "In a call"
+          : status === "away" ? "Away"
+            : "Offline";
+    return { status, label, shortLabel: label, etaMinutes: 0, isLive: status === "live", callable: status === "live" };
+  }
+  return getPresence(mentor.id, true, now);
+}
 
 export default function MentorDetail() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const mentor = MENTORS.find((m) => m.id === id);
+  const socket = useSocket();
   const { state, spendCoins, recordCall } = useApp();
   const [slot, setSlot] = useState<string | null>(null);
-  const now = usePresenceTick();
-  const presence = mentor ? getPresence(mentor.id, mentor.online, now) : null;
+  const [mentor, setMentor] = useState<MentorProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(tick);
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/mentors");
+        if (!res.ok) throw new Error("fetch failed");
+        const data = (await res.json()) as MentorProfile[];
+        const found = data.find((m) => m.id === id) ?? null;
+        if (!cancelled) { setMentor(found); setLoading(false); }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
+
+  const socketStatus = mentor ? (socket.presenceMap[mentor.id] as PresenceStatus | undefined) : undefined;
+  const presence = mentor ? resolvePresence(mentor, socketStatus, now) : null;
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (!mentor) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
-          Mentor not found.
-        </Text>
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>Mentor not found.</Text>
         <View style={{ marginTop: 12 }}>
           <Button label="Go back" variant="outline" onPress={() => router.back()} />
         </View>
@@ -53,21 +94,14 @@ export default function MentorDetail() {
 
   const handleHelpNow = async () => {
     if (presence && !presence.callable) {
-      showAlert(
-        "Mentor not available",
-        presence.label + ". Try a Live mentor or book a time slot below.",
-      );
+      showAlert("Mentor not available", presence.label + ". Try a Live mentor or book a slot below.");
       return;
     }
     if (state.coins < mentor.pricePer10Min) {
-      showAlert(
-        "Not enough coins",
-        `You need ${mentor.pricePer10Min} coins for a 10-minute session.`,
-        [
-          { text: "OK", style: "cancel" },
-          { text: "Earn coins", onPress: () => router.push("/(tabs)/wallet") },
-        ],
-      );
+      showAlert("Not enough coins", `You need ${mentor.pricePer10Min} coins for 10 minutes with ${mentor.name}.`, [
+        { text: "OK", style: "cancel" },
+        { text: "Earn coins", onPress: () => router.push("/(tabs)/wallet") },
+      ]);
       return;
     }
     showAlert(
@@ -80,18 +114,8 @@ export default function MentorDetail() {
           onPress: async () => {
             const ok = await spendCoins(mentor.pricePer10Min);
             if (ok) {
-              await recordCall({
-                minutes: 10,
-                type: "mentor",
-                partnerName: mentor.name,
-                partnerInitials: mentor.initials,
-                partnerColor: mentor.accentColor,
-                partnerRegion: mentor.region,
-                coinsSpent: mentor.pricePer10Min,
-              });
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success,
-              ).catch(() => undefined);
+              await recordCall({ minutes: 10, type: "mentor", partnerName: mentor.name, partnerInitials: mentor.initials, partnerColor: mentor.accentColor, partnerRegion: mentor.region, coinsSpent: mentor.pricePer10Min });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
               router.push("/practice");
             }
           },
@@ -102,245 +126,77 @@ export default function MentorDetail() {
 
   const handleBook = async () => {
     if (!slot) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-      () => undefined,
-    );
-    showAlert(
-      "Booked!",
-      `Your session with ${mentor.name} is confirmed for ${slot}. We'll notify you 5 minutes before.`,
-    );
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    showAlert("Booked!", `Your session with ${mentor.name} is confirmed for ${slot}.`);
     setSlot(null);
   };
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "",
-          headerTransparent: true,
-          headerTintColor: colors.foreground,
-        }}
-      />
+      <Stack.Screen options={{ title: "", headerTransparent: true, headerTintColor: colors.foreground }} />
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
-          contentContainerStyle={{
-            paddingTop: insets.top + 60,
-            paddingBottom: insets.bottom + 32,
-            paddingHorizontal: 20,
-          }}
+          contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: insets.bottom + 32, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
         >
           <View style={{ alignItems: "center" }}>
-            <Avatar
-              initials={mentor.initials}
-              size={104}
-              color={mentor.accentColor}
-              status={presence?.status}
-            />
-            <Text
-              style={{
-                fontFamily: "Inter_700Bold",
-                fontSize: 24,
-                color: colors.foreground,
-                marginTop: 14,
-              }}
-            >
-              {mentor.name}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                marginTop: 6,
-              }}
-            >
+            <Avatar initials={mentor.initials} size={104} color={mentor.accentColor} status={presence?.status} />
+            <Text style={{ fontFamily: "Inter_700Bold", fontSize: 24, color: colors.foreground, marginTop: 14 }}>{mentor.name}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
               <Feather name="map-pin" size={12} color={colors.mutedForeground} />
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 13,
-                  color: colors.mutedForeground,
-                }}
-              >
-                {mentor.region}
-              </Text>
+              <Text style={{ fontFamily: "Inter_500Medium", fontSize: 13, color: colors.mutedForeground }}>{mentor.region}</Text>
             </View>
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 8,
-                marginTop: 12,
-              }}
-            >
-              <Pill
-                label={mentor.level}
-                tone={mentor.level === "Pro Mentor" ? "primary" : "default"}
-              />
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+              <Pill label={mentor.mentorLevel} tone={mentor.mentorLevel === "Pro Mentor" ? "primary" : "default"} />
             </View>
             {presence ? (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  marginTop: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                  backgroundColor: colors.card,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: statusColor(presence.status),
-                  }}
-                />
-                <Text
-                  style={{
-                    fontFamily: "Inter_600SemiBold",
-                    fontSize: 12,
-                    color: statusColor(presence.status),
-                  }}
-                >
-                  {presence.label}
-                </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor(presence.status) }} />
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: statusColor(presence.status) }}>{presence.label}</Text>
+                {socket.connected ? (
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.mutedForeground, marginLeft: 4 }}>· live</Text>
+                ) : null}
               </View>
             ) : null}
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-              marginTop: 24,
-            }}
-          >
-            <StatCard
-              icon="star"
-              iconColor="#F5A524"
-              label="Rating"
-              value={mentor.rating.toFixed(1)}
-            />
-            <StatCard
-              icon="users"
-              iconColor={colors.primary}
-              label="Sessions"
-              value={mentor.sessions.toLocaleString()}
-            />
-            <StatCard
-              icon="zap"
-              iconColor="#A93D00"
-              label="Per 10 min"
-              value={mentor.pricePer10Min.toString()}
-            />
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
+            <StatCard icon="star" iconColor="#F5A524" label="Rating" value={mentor.rating.toFixed(1)} />
+            <StatCard icon="users" iconColor={colors.primary} label="Sessions" value={mentor.sessions.toLocaleString()} />
+            <StatCard icon="zap" iconColor="#A93D00" label="Per 10 min" value={mentor.pricePer10Min.toString()} />
           </View>
 
-          <Text style={sectionHeader(colors)}>About</Text>
+          <SectionHeader colors={colors}>About</SectionHeader>
           <Card>
-            <Text
-              style={{
-                fontFamily: "Inter_400Regular",
-                fontSize: 14,
-                color: colors.foreground,
-                lineHeight: 22,
-              }}
-            >
-              {mentor.bio}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 6,
-                marginTop: 14,
-              }}
-            >
+            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{mentor.bio}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
               {mentor.specialties.map((s) => (
-                <View
-                  key={s}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    backgroundColor: colors.muted,
-                    borderRadius: 999,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Inter_500Medium",
-                      fontSize: 12,
-                      color: colors.foreground,
-                    }}
-                  >
-                    {s}
-                  </Text>
+                <View key={s} style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: colors.muted, borderRadius: 999 }}>
+                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 12, color: colors.foreground }}>{s}</Text>
                 </View>
               ))}
             </View>
           </Card>
 
-          <Text style={sectionHeader(colors)}>Languages</Text>
+          <SectionHeader colors={colors}>Languages</SectionHeader>
           <Card>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {mentor.languages.map((l) => (
-                <View
-                  key={l}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    backgroundColor: "#EAE2FF",
-                    borderRadius: 999,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Inter_600SemiBold",
-                      fontSize: 12,
-                      color: colors.primary,
-                    }}
-                  >
-                    {l}
-                  </Text>
+                <View key={l} style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#EAE2FF", borderRadius: 999 }}>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: colors.primary }}>{l}</Text>
                 </View>
               ))}
             </View>
           </Card>
 
-          <Text style={sectionHeader(colors)}>Book a session</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-          >
+          <SectionHeader colors={colors}>Book a session</SectionHeader>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {SLOTS.map((s) => {
               const active = slot === s;
               return (
                 <Pressable key={s} onPress={() => setSlot(s)}>
-                  <View
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      borderRadius: 14,
-                      backgroundColor: active ? colors.primary : colors.card,
-                      borderWidth: 1,
-                      borderColor: active ? colors.primary : colors.border,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontFamily: "Inter_600SemiBold",
-                        fontSize: 13,
-                        color: active ? "#FFFFFF" : colors.foreground,
-                      }}
-                    >
-                      {s}
-                    </Text>
+                  <View style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: active ? colors.primary : colors.card, borderWidth: 1, borderColor: active ? colors.primary : colors.border }}>
+                    <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: active ? "#FFFFFF" : colors.foreground }}>{s}</Text>
                   </View>
                 </Pressable>
               );
@@ -348,47 +204,18 @@ export default function MentorDetail() {
           </ScrollView>
 
           <View style={{ marginTop: 20, gap: 10 }}>
-            <View>
-              <Button
-                label={
-                  presence?.callable
-                    ? `Call live · ${mentor.pricePer10Min} coins`
-                    : presence?.shortLabel ?? "Not available"
-                }
-                icon="phone-call"
-                onPress={handleHelpNow}
-                disabled={!presence?.callable}
-                fullWidth
-                size="lg"
-              />
-            </View>
             <Button
-              label={slot ? `Book ${slot}` : "Pick a time slot"}
-              icon="calendar"
-              variant={slot ? "secondary" : "outline"}
-              onPress={handleBook}
-              disabled={!slot}
+              label={presence?.callable ? `Call live · ${mentor.pricePer10Min} coins` : presence?.shortLabel ?? "Not available"}
+              icon="phone-call"
+              onPress={handleHelpNow}
+              disabled={!presence?.callable}
               fullWidth
+              size="lg"
             />
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                marginTop: 8,
-              }}
-            >
+            <Button label={slot ? `Book ${slot}` : "Pick a time slot"} icon="calendar" variant={slot ? "secondary" : "outline"} onPress={handleBook} disabled={!slot} fullWidth />
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 8 }}>
               <CoinBadge amount={state.coins} size="sm" />
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 12,
-                  color: colors.mutedForeground,
-                }}
-              >
-                in your wallet
-              </Text>
+              <Text style={{ fontFamily: "Inter_500Medium", fontSize: 12, color: colors.mutedForeground }}>in your wallet</Text>
             </View>
           </View>
         </ScrollView>
@@ -397,60 +224,21 @@ export default function MentorDetail() {
   );
 }
 
-function StatCard({
-  icon,
-  iconColor,
-  label,
-  value,
-}: {
-  icon: React.ComponentProps<typeof Feather>["name"];
-  iconColor: string;
-  label: string;
-  value: string;
-}) {
+function StatCard({ icon, iconColor, label, value }: { icon: React.ComponentProps<typeof Feather>["name"]; iconColor: string; label: string; value: string }) {
   const colors = useColors();
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.card,
-        borderRadius: 16,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: colors.border,
-      }}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border }}>
       <Feather name={icon} size={16} color={iconColor} />
-      <Text
-        style={{
-          fontFamily: "Inter_700Bold",
-          fontSize: 18,
-          color: colors.foreground,
-          marginTop: 8,
-        }}
-      >
-        {value}
-      </Text>
-      <Text
-        style={{
-          fontFamily: "Inter_500Medium",
-          fontSize: 11,
-          color: colors.mutedForeground,
-          marginTop: 2,
-        }}
-      >
-        {label}
-      </Text>
+      <Text style={{ fontFamily: "Inter_700Bold", fontSize: 18, color: colors.foreground, marginTop: 8 }}>{value}</Text>
+      <Text style={{ fontFamily: "Inter_500Medium", fontSize: 11, color: colors.mutedForeground, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
 
-function sectionHeader(colors: ReturnType<typeof useColors>) {
-  return {
-    fontFamily: "Inter_700Bold" as const,
-    fontSize: 18,
-    color: colors.foreground,
-    marginTop: 24,
-    marginBottom: 12,
-  };
+function SectionHeader({ children, colors }: { children: React.ReactNode; colors: ReturnType<typeof useColors> }) {
+  return (
+    <Text style={{ fontFamily: "Inter_700Bold", fontSize: 18, color: colors.foreground, marginTop: 24, marginBottom: 12 }}>
+      {children}
+    </Text>
+  );
 }

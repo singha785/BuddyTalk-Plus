@@ -1,0 +1,3 @@
+- [Socket.IO path + proxy routing](socket-proxy.md) — Socket.IO must use path `/api/socket.io` so Replit proxy routes it correctly through the `/api` prefix.
+- [socket.io-client pnpm install](socket-client-install.md) — socket.io-client can appear as a broken symlink in speakup node_modules; must run `pnpm --filter @workspace/speakup add socket.io-client@4` explicitly to populate pnpm virtual store.
+- [Mentor seeding approach](mentor-seed.md) — Mentors seeded on server startup via seedMentors(); checks count before re-seeding; uses fixed demo emails (`@buddytalk.demo`).

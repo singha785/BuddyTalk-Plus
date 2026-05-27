@@ -89,6 +89,43 @@ export interface VerifyMagicLinkRequest {
   token: string;
 }
 
+export type MentorProfileMentorLevel =
+  (typeof MentorProfileMentorLevel)[keyof typeof MentorProfileMentorLevel];
+
+export const MentorProfileMentorLevel = {
+  Helper: "Helper",
+  Mentor: "Mentor",
+  Pro_Mentor: "Pro Mentor",
+} as const;
+
+export type MentorProfilePresenceStatus =
+  | (typeof MentorProfilePresenceStatus)[keyof typeof MentorProfilePresenceStatus]
+  | null;
+
+export const MentorProfilePresenceStatus = {
+  live: "live",
+  "in-call": "in-call",
+  away: "away",
+  offline: "offline",
+} as const;
+
+export interface MentorProfile {
+  id: string;
+  name: string;
+  region: string;
+  level?: string | null;
+  initials: string;
+  mentorLevel: MentorProfileMentorLevel;
+  rating: number;
+  sessions: number;
+  bio: string;
+  pricePer10Min: number;
+  languages: string[];
+  specialties: string[];
+  accentColor: string;
+  presenceStatus?: MentorProfilePresenceStatus;
+}
+
 export type UpdateProfileRequestLevel =
   | (typeof UpdateProfileRequestLevel)[keyof typeof UpdateProfileRequestLevel]
   | null;

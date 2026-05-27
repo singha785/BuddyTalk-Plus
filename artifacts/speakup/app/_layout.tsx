@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SocketProvider } from "@/context/SocketContext";
 import { configureApiClient } from "@/lib/apiSetup";
 
 SplashScreen.preventAutoHideAsync();
@@ -40,7 +41,6 @@ function NavigationGate() {
       return;
     }
 
-    // Authenticated
     if (!user.onboarded) {
       if (!inOnboarding) router.replace("/onboarding");
     } else if (inAuth || inOnboarding) {
@@ -97,10 +97,12 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <AppProvider>
-                  <StatusBar style="auto" />
-                  <NavigationGate />
-                </AppProvider>
+                <SocketProvider>
+                  <AppProvider>
+                    <StatusBar style="auto" />
+                    <NavigationGate />
+                  </AppProvider>
+                </SocketProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

@@ -1,7 +1,13 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
@@ -9,10 +15,10 @@ import { Card } from "@/components/Card";
 import { CoinBadge } from "@/components/CoinBadge";
 import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
-import { MENTORS } from "@/data/mentors";
+import { useSocket, type PresenceStatus } from "@/context/SocketContext";
 import { getPresence, statusColor } from "@/data/presence";
 import { useColors } from "@/hooks/useColors";
-import { usePresenceTick } from "@/hooks/usePresenceTick";
+import type { MentorProfile } from "@workspace/api-client-react";
 
 const TABS = [
   { id: "live", label: "Live now" },
@@ -22,19 +28,93 @@ const TABS = [
   { id: "Helper", label: "Helper" },
 ] as const;
 
+const STATUS_ORDER: Record<string, number> = {
+  live: 0,
+  "in-call": 1,
+  away: 2,
+  offline: 3,
+};
+
+type MentorPresence = ReturnType<typeof getPresence>;
+
+function resolvePresence(
+  mentor: MentorProfile,
+  socketStatus: PresenceStatus | undefined,
+  now: number,
+): MentorPresence {
+  if (socketStatus) {
+    const status = socketStatus;
+    const label =
+      status === "live"
+        ? "Live now"
+        : status === "in-call"
+          ? "In a call"
+          : status === "away"
+            ? "Away"
+            : "Offline";
+    return {
+      status,
+      label,
+      shortLabel: label,
+      etaMinutes: 0,
+      isLive: status === "live",
+      callable: status === "live",
+    };
+  }
+  // Fall back to deterministic simulation for mentors not connected via socket
+  return getPresence(mentor.id, true, now);
+}
+
 export default function MentorsTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const now = usePresenceTick();
+  const socket = useSocket();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("live");
+  const [mentors, setMentors] = useState<MentorProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Refresh simulated presence every 30s for offline mentors
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Fetch mentors from API
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMentors = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/mentors");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as MentorProfile[];
+        if (!cancelled) {
+          setMentors(data);
+          setFetchError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setFetchError("Could not load mentors.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void fetchMentors();
+    return () => { cancelled = true; };
+  }, []);
 
   const enriched = useMemo(
     () =>
-      MENTORS.map((m) => ({
+      mentors.map((m) => ({
         mentor: m,
-        presence: getPresence(m.id, m.online, now),
+        presence: resolvePresence(
+          m,
+          socket.presenceMap[m.id] as PresenceStatus | undefined,
+          now,
+        ),
       })),
-    [now],
+    [mentors, socket.presenceMap, now],
   );
 
   const liveCount = enriched.filter((e) => e.presence.isLive).length;
@@ -43,16 +123,12 @@ export default function MentorsTab() {
     let rows = enriched;
     if (tab === "live") rows = enriched.filter((e) => e.presence.isLive);
     else if (tab !== "all")
-      rows = enriched.filter((e) => e.mentor.level === tab);
-    return [...rows].sort((a, b) => {
-      const order: Record<string, number> = {
-        live: 0,
-        "in-call": 1,
-        away: 2,
-        offline: 3,
-      };
-      return order[a.presence.status] - order[b.presence.status];
-    });
+      rows = enriched.filter((e) => e.mentor.mentorLevel === tab);
+    return [...rows].sort(
+      (a, b) =>
+        (STATUS_ORDER[a.presence.status] ?? 3) -
+        (STATUS_ORDER[b.presence.status] ?? 3),
+    );
   }, [enriched, tab]);
 
   return (
@@ -88,7 +164,9 @@ export default function MentorsTab() {
         {/* Live banner */}
         <View style={{ marginTop: 16 }}>
           <Card>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
+            >
               <View
                 style={{
                   width: 48,
@@ -116,9 +194,11 @@ export default function MentorsTab() {
                     color: colors.foreground,
                   }}
                 >
-                  {liveCount > 0
-                    ? `${liveCount} mentor${liveCount === 1 ? "" : "s"} live now`
-                    : "No mentors live right now"}
+                  {loading
+                    ? "Loading mentors…"
+                    : liveCount > 0
+                      ? `${liveCount} mentor${liveCount === 1 ? "" : "s"} live now`
+                      : "No mentors live right now"}
                 </Text>
                 <Text
                   style={{
@@ -128,11 +208,23 @@ export default function MentorsTab() {
                     marginTop: 2,
                   }}
                 >
-                  {liveCount > 0
-                    ? "Tap a green-dot mentor to call instantly."
-                    : "Try again in a few minutes — presence updates every 30s."}
+                  {socket.connected
+                    ? "Live presence is real-time via socket."
+                    : "Connecting for live presence…"}
                 </Text>
               </View>
+              {socket.connected ? (
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: "#16A085",
+                  }}
+                />
+              ) : (
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+              )}
             </View>
           </Card>
         </View>
@@ -143,11 +235,7 @@ export default function MentorsTab() {
         >
           <Card>
             <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 14,
-              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
             >
               <View
                 style={{
@@ -191,6 +279,7 @@ export default function MentorsTab() {
           </Card>
         </Pressable>
 
+        {/* Tab filter */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -240,7 +329,41 @@ export default function MentorsTab() {
           })}
         </ScrollView>
 
-        {list.length === 0 ? (
+        {/* Error state */}
+        {fetchError ? (
+          <Card>
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 14,
+                color: "#B0181F",
+                textAlign: "center",
+              }}
+            >
+              {fetchError}
+            </Text>
+          </Card>
+        ) : null}
+
+        {/* Loading skeleton */}
+        {loading ? (
+          <View style={{ alignItems: "center", paddingVertical: 32 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text
+              style={{
+                fontFamily: "Inter_400Regular",
+                fontSize: 13,
+                color: colors.mutedForeground,
+                marginTop: 12,
+              }}
+            >
+              Loading mentors from server…
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Empty state */}
+        {!loading && list.length === 0 ? (
           <Card>
             <Text
               style={{
@@ -261,14 +384,18 @@ export default function MentorsTab() {
                 textAlign: "center",
               }}
             >
-              Try the "All" tab to see who's coming back soon.
+              Try the "All" tab to see everyone.
             </Text>
           </Card>
         ) : null}
 
+        {/* Mentor list */}
         <View style={{ gap: 12 }}>
           {list.map(({ mentor: m, presence }) => (
-            <Pressable key={m.id} onPress={() => router.push(`/mentor/${m.id}`)}>
+            <Pressable
+              key={m.id}
+              onPress={() => router.push(`/mentor/${m.id}`)}
+            >
               <Card>
                 <View style={{ flexDirection: "row", gap: 14 }}>
                   <Avatar
@@ -295,12 +422,10 @@ export default function MentorsTab() {
                         {m.name}
                       </Text>
                       <Pill
-                        label={m.level}
-                        tone={m.level === "Pro Mentor" ? "primary" : "default"}
+                        label={m.mentorLevel}
+                        tone={m.mentorLevel === "Pro Mentor" ? "primary" : "default"}
                       />
                     </View>
-
-                    {/* Live status row */}
                     <View
                       style={{
                         flexDirection: "row",
@@ -327,7 +452,6 @@ export default function MentorsTab() {
                         {presence.label}
                       </Text>
                     </View>
-
                     <View
                       style={{
                         flexDirection: "row",

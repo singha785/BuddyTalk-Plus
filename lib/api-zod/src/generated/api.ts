@@ -181,6 +181,35 @@ export const GetMeResponse = zod.object({
 });
 
 /**
+ * @summary List all approved mentors with live presence status
+ */
+export const ListMentorsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  region: zod.string(),
+  level: zod.string().nullish(),
+  initials: zod.string(),
+  mentorLevel: zod.enum(["Helper", "Mentor", "Pro Mentor"]),
+  rating: zod.number(),
+  sessions: zod.number(),
+  bio: zod.string(),
+  pricePer10Min: zod.number(),
+  languages: zod.array(zod.string()),
+  specialties: zod.array(zod.string()),
+  accentColor: zod.string(),
+  presenceStatus: zod
+    .union([
+      zod.literal("live"),
+      zod.literal("in-call"),
+      zod.literal("away"),
+      zod.literal("offline"),
+      zod.literal(null),
+    ])
+    .nullish(),
+});
+export const ListMentorsResponse = zod.array(ListMentorsResponseItem);
+
+/**
  * @summary Update current user's profile
  */
 export const UpdateMeBody = zod.object({

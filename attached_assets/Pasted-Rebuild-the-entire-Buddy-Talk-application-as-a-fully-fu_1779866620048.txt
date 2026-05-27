@@ -1,0 +1,114 @@
+Rebuild the entire Buddy Talk application as a fully functional real-time English speaking practice platform instead of a static or dummy UI prototype.
+
+Current problems:
+- Fake calling screen is shown but no real voice/video connection happens.
+- Mentors/users shown as “live” are static dummy data.
+- Discover/feed/trending sections use fake hardcoded content.
+- Real-time updates are not working.
+- Audio rooms and speaking sessions are not connecting.
+- App behaves like a frontend demo instead of a production-ready app.
+
+Convert the app into a real backend-connected live application with these requirements:
+
+1. REAL-TIME CALLING
+- Implement actual 1-to-1 voice calling using WebRTC.
+- Add Agora SDK or ZegoCloud SDK for low-latency voice communication.
+- Show real call states:
+  - ringing
+  - connected
+  - muted
+  - call ended
+- Remove all fake animations and simulated call timers.
+
+2. REAL LIVE USERS & MENTORS
+- Replace all dummy mentor data with backend database data.
+- Create mentor profile system:
+  - online/offline status
+  - active now
+  - rating
+  - language expertise
+  - response time
+- Fetch live mentors dynamically from backend.
+- Only show users as online if socket connection is active.
+
+3. REAL-TIME SYSTEM
+- Implement Socket.IO or Firebase Realtime Database.
+- Real-time updates required for:
+  - online users
+  - live rooms
+  - active calls
+  - mentor availability
+  - notifications
+  - speaking requests
+
+4. BACKEND INTEGRATION
+- Create proper backend using:
+  - Node.js + Express
+  - MongoDB or Firebase
+- Remove all hardcoded arrays and mock JSON data.
+- Every section must fetch live backend data through APIs.
+
+5. AUTHENTICATION
+- Add real login/signup:
+  - Google login
+  - email/password
+  - OTP authentication
+- Store users securely.
+
+6. LIVE SPEAKING ROOMS
+- Create actual joinable English practice rooms.
+- Users should be able to:
+  - create room
+  - join room
+  - speak live
+  - mute/unmute
+  - leave room
+- Display real participant count.
+
+7. MATCHING SYSTEM
+- Implement random speaking partner matching.
+- Match users by:
+  - English level
+  - interests
+  - country/language
+  - availability
+
+8. REMOVE ALL DUMMY FEATURES
+- Delete every fake:
+  - call screen
+  - fake mentor
+  - static chat
+  - placeholder notifications
+  - demo analytics
+- Replace with working production logic only.
+
+9. ADMIN PANEL
+- Create admin dashboard for:
+  - approving mentors
+  - banning users
+  - monitoring active calls
+  - viewing reports
+
+10. PRODUCTION QUALITY
+- Fix broken navigation and non-working buttons.
+- Optimize for Android APK build.
+- Ensure all pages are functional.
+- Use clean responsive UI.
+- Add loading states and error handling.
+- Ensure real-time synchronization works continuously.
+
+11. DEPLOYMENT READY
+- Prepare:
+  - frontend
+  - backend
+  - database schemas
+  - environment variables
+  - API routes
+  - socket server
+  - APK-ready configuration
+
+12. IMPORTANT
+- Do not generate demo/sample/mock application.
+- Build a real scalable working app with production-ready architecture.
+- Do not use placeholder data anywhere.
+- Every feature must be actually functional.

@@ -23,6 +23,7 @@ import type {
   LoginRequest,
   MagicLinkRequest,
   MagicLinkResponse,
+  MentorProfile,
   SignupRequest,
   UpdateProfileRequest,
   UserProfile,
@@ -592,6 +593,81 @@ export function useGetMe<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all approved mentors with live presence status
+ */
+export const getListMentorsUrl = () => {
+  return `/api/mentors`;
+};
+
+export const listMentors = async (
+  options?: RequestInit,
+): Promise<MentorProfile[]> => {
+  return customFetch<MentorProfile[]>(getListMentorsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMentorsQueryKey = () => {
+  return [`/api/mentors`] as const;
+};
+
+export const getListMentorsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMentors>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMentors>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMentorsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMentors>>> = ({
+    signal,
+  }) => listMentors({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMentors>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMentorsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMentors>>
+>;
+export type ListMentorsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all approved mentors with live presence status
+ */
+
+export function useListMentors<
+  TData = Awaited<ReturnType<typeof listMentors>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMentors>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMentorsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
