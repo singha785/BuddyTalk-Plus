@@ -1,0 +1,100 @@
+I am downloading the complete source code/file tree from an AI app builder website and then generating production APK/AAB builds from it.
+
+Before generating any APK or AAB file, please perform a complete pre-build backend and production stability audit on the entire project.
+
+Main Goal:
+I do NOT want build-time success with runtime failures later.
+The app must be fully production-ready before APK/AAB generation.
+
+Please automatically detect and fix all possible backend, authentication, deployment, API, and production issues in advance.
+
+Mandatory checks before build generation:
+
+1. Backend/API Stability
+
+* Verify all backend APIs are production-safe.
+* Ensure every API always returns valid JSON.
+* Prevent HTML error pages, undefined responses, or empty responses.
+* Add:
+  Content-Type: application/json
+* Add proper status codes and error handling.
+
+2. Authentication System Audit
+
+* Fully test:
+
+  * Signup
+  * Login
+  * Email OTP
+  * OTP verification
+  * Session/token handling
+  * Logout
+* Ensure no parsing errors or “Something went wrong” messages occur.
+
+3. Production URL Verification
+
+* Detect and replace temporary/dev URLs.
+* Ensure APIs are NOT pointing to:
+
+  * localhost
+  * temporary Replit preview URLs
+  * expired development domains
+* Convert all API endpoints to stable production-ready URLs.
+
+4. Environment Variables
+
+* Verify all required ENV variables exist.
+* Ensure production ENV variables are configured properly.
+* Prevent missing-secret crashes after APK/AAB installation.
+
+5. APK/AAB Runtime Testing
+
+* Simulate real Android production behavior.
+* Test app after installation.
+* Detect issues that appear only in release builds.
+* Verify network requests work in release mode.
+
+6. Network & CORS Validation
+
+* Check CORS configuration.
+* Ensure Android app can access backend APIs.
+* Prevent blocked requests in production.
+
+7. Error Prevention System
+
+* Add global error handling.
+* Prevent app crashes from:
+
+  * failed fetch requests
+  * invalid JSON
+  * backend downtime
+  * timeout issues
+  * async failures
+
+8. Build Safety Checks
+
+* Verify:
+
+  * Android permissions
+  * internet permission
+  * API security config
+  * release build compatibility
+  * production signing readiness
+
+9. Deployment Stability
+
+* Ensure backend remains active after deployment.
+* Detect unstable/free temporary hosting risks.
+* Recommend stable backend deployment if needed.
+
+10. Final Validation Rule
+    DO NOT generate APK/AAB until:
+
+* Backend is stable
+* Authentication works fully
+* OTP/email system works
+* APIs return proper JSON
+* No runtime/network/parsing errors remain
+* Release build testing passes successfully
+
+After all checks and fixes are complete, only then generate the final production-ready APK/AAB build.

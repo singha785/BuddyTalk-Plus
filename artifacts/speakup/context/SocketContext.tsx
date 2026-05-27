@@ -46,9 +46,10 @@ const SocketContext = createContext<SocketContextValue | null>(null);
 function getSocketUrl(): string {
   if (Platform.OS !== "web") {
     const domain = process.env["EXPO_PUBLIC_DOMAIN"];
-    return domain ? `https://${domain}` : window.location.origin;
+    if (domain) return `https://${domain}`;
+    return "http://localhost:80";
   }
-  return window.location.origin;
+  return typeof window !== "undefined" ? window.location.origin : "";
 }
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {

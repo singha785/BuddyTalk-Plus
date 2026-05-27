@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "speakup",
+    "scheme": "buddytalkplus",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,9 +14,26 @@
       "backgroundColor": "#5B3DFF"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.buddytalkplus.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "BuddyTalk+ needs your microphone to speak with practice partners and mentors.",
+        "NSCameraUsageDescription": "BuddyTalk+ may use your camera for video calls."
+      }
     },
-    "android": {},
+    "android": {
+      "package": "com.buddytalkplus.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#5B3DFF"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -24,7 +41,7 @@
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://buddytalkplus.app/"
         }
       ],
       "expo-font",
