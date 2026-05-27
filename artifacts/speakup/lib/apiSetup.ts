@@ -20,9 +20,9 @@ export function configureApiClient(): void {
 
   if (Platform.OS !== "web") {
     const domain = process.env["EXPO_PUBLIC_DOMAIN"];
-    if (domain) {
-      setBaseUrl(`https://${domain}`);
-    }
+    setBaseUrl(domain ? `https://${domain}/api` : "/api");
+  } else {
+    setBaseUrl("/api");
   }
 
   setAuthTokenGetter(() => getAuthToken());
