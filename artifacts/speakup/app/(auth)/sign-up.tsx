@@ -39,8 +39,19 @@ export default function SignUp() {
       await signUp(email.trim(), password, name.trim());
       router.replace("/onboarding");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not sign up";
-      setError(msg.includes("409") ? "That email is already registered." : msg);
+      const msg = e instanceof Error ? e.message : "";
+      if (
+        e instanceof TypeError ||
+        msg.includes("Network request failed") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("fetch failed")
+      ) {
+        setError("Can't reach the server. Check your internet connection and try again.");
+      } else if (msg.includes("409")) {
+        setError("That email is already registered.");
+      } else {
+        setError(msg || "Could not create account. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }

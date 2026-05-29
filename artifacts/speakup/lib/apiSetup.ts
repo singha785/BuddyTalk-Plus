@@ -10,9 +10,12 @@ let configured = false;
 
 /**
  * Configure the shared OpenAPI client at module load.
- * - On web, the app is served from the same proxy host so `/api` works as-is.
- * - On native (Expo Go), point absolute URLs at the Replit dev domain so
- *   bearer-tokenized requests resolve correctly.
+ *
+ * - On web: served from the same proxy host, so `/api` works as-is.
+ * - On native (Android/iOS APK): must point at the deployed backend.
+ *   Set EXPO_PUBLIC_DOMAIN to your deployed Replit domain, e.g.
+ *   `your-api.replit.app` (without https:// or trailing slash).
+ *   This value is baked into the APK at EAS build time.
  */
 export function configureApiClient(): void {
   if (configured) return;
@@ -20,7 +23,18 @@ export function configureApiClient(): void {
 
   if (Platform.OS !== "web") {
     const domain = process.env["EXPO_PUBLIC_DOMAIN"];
-    setBaseUrl(domain ? `https://${domain}/api` : "/api");
+    if (domain) {
+      setBaseUrl(`https://${domain}/api`);
+    } else if (__DEV__) {
+      console.warn(
+        "[BuddyTalk+] EXPO_PUBLIC_DOMAIN is not set. " +
+          "API calls from native will fail. " +
+          "Set EXPO_PUBLIC_DOMAIN=<your-deployed-domain> in eas.json before building.",
+      );
+      setBaseUrl(null);
+    } else {
+      setBaseUrl(null);
+    }
   } else {
     setBaseUrl("/api");
   }

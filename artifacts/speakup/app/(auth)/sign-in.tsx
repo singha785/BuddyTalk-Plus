@@ -37,8 +37,19 @@ export default function SignIn() {
       // Routing gate will redirect based on onboarded flag.
       router.replace("/");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not sign in";
-      setError(msg.includes("401") ? "Wrong email or password." : msg);
+      const msg = e instanceof Error ? e.message : "";
+      if (
+        e instanceof TypeError ||
+        msg.includes("Network request failed") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("fetch failed")
+      ) {
+        setError("Can't reach the server. Check your internet connection and try again.");
+      } else if (msg.includes("401")) {
+        setError("Wrong email or password.");
+      } else {
+        setError(msg || "Could not sign in. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }

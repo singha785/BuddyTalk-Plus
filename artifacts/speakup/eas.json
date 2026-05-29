@@ -7,7 +7,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_DOMAIN": ""
+        "EXPO_PUBLIC_DOMAIN": "REPLACE_WITH_YOUR_REPLIT_DEV_DOMAIN"
       }
     },
     "preview": {
@@ -16,7 +16,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": ""
+        "EXPO_PUBLIC_DOMAIN": "REPLACE_WITH_YOUR_DEPLOYED_DOMAIN"
       }
     },
     "production": {
@@ -24,7 +24,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": ""
+        "EXPO_PUBLIC_DOMAIN": "REPLACE_WITH_YOUR_DEPLOYED_DOMAIN"
       }
     }
   },
