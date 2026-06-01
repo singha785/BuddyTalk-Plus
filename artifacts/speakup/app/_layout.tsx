@@ -15,6 +15,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { IncomingCallOverlay } from "@/components/IncomingCallOverlay";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
@@ -49,28 +50,31 @@ function NavigationGate() {
   }, [user, ready, segments]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerBackTitle: "Back",
-        contentStyle: { backgroundColor: "#F7F5FF" },
-      }}
-    >
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="practice"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          animation: "slide_from_bottom",
+    <>
+      <Stack
+        screenOptions={{
+          headerBackTitle: "Back",
+          contentStyle: { backgroundColor: "#F7F5FF" },
         }}
-      />
-      <Stack.Screen name="lesson/[id]" options={{ headerShown: true }} />
-      <Stack.Screen name="mentor/[id]" options={{ headerShown: true }} />
-      <Stack.Screen name="tasks" options={{ headerShown: true }} />
-      <Stack.Screen name="become-mentor" options={{ headerShown: true }} />
-    </Stack>
+      >
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="practice"
+          options={{
+            presentation: "modal",
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen name="lesson/[id]" options={{ headerShown: true }} />
+        <Stack.Screen name="mentor/[id]" options={{ headerShown: true }} />
+        <Stack.Screen name="tasks" options={{ headerShown: true }} />
+        <Stack.Screen name="become-mentor" options={{ headerShown: true }} />
+      </Stack>
+      <IncomingCallOverlay />
+    </>
   );
 }
 

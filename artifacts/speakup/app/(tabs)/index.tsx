@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   Platform,
+  Pressable as RNPressable,
   ScrollView,
   Text,
   View,
@@ -19,6 +20,7 @@ import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
 import { CONSTANTS, useApp } from "@/context/AppContext";
+import { useSocket } from "@/context/SocketContext";
 import { LESSONS } from "@/data/lessons";
 import { MENTORS } from "@/data/mentors";
 import { getPresence, statusColor } from "@/data/presence";
@@ -30,6 +32,7 @@ export default function Home() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { state, freeMinutesRemaining } = useApp();
+  const { userOnline, setUserOnlineStatus } = useSocket();
   const now = usePresenceTick();
 
   const firstName = state.profile.name?.split(" ")[0] || "Friend";
@@ -200,6 +203,39 @@ export default function Home() {
               </View>
             </View>
             <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+              {/* Online / offline toggle */}
+              <RNPressable
+                onPress={() => setUserOnlineStatus(!userOnline)}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
+                  backgroundColor: userOnline ? "#DDF5EE" : "#F0F0F0",
+                  paddingHorizontal: 10,
+                  paddingVertical: 7,
+                  borderRadius: 999,
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <View
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 3.5,
+                    backgroundColor: userOnline ? "#16A085" : "#999999",
+                  }}
+                />
+                <Text
+                  style={{
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 11,
+                    color: userOnline ? "#0E6F5A" : "#666666",
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  {userOnline ? "Online" : "Offline"}
+                </Text>
+              </RNPressable>
               <View
                 style={{
                   flexDirection: "row",
