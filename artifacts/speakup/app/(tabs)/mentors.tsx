@@ -158,7 +158,7 @@ export default function MentorsTab() {
             marginTop: 4,
           }}
         >
-          Real people, available to talk right now.
+          AI practice partners — available any time to help you improve.
         </Text>
 
         {/* Live banner */}
@@ -412,15 +412,35 @@ export default function MentorsTab() {
                         justifyContent: "space-between",
                       }}
                     >
-                      <Text
-                        style={{
-                          fontFamily: "Inter_700Bold",
-                          fontSize: 16,
-                          color: colors.foreground,
-                        }}
-                      >
-                        {m.name}
-                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text
+                          style={{
+                            fontFamily: "Inter_700Bold",
+                            fontSize: 16,
+                            color: colors.foreground,
+                          }}
+                        >
+                          {m.name}
+                        </Text>
+                        <View
+                          style={{
+                            backgroundColor: "#EDE9FE",
+                            borderRadius: 6,
+                            paddingHorizontal: 5,
+                            paddingVertical: 2,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "Inter_600SemiBold",
+                              fontSize: 10,
+                              color: "#5B3DFF",
+                            }}
+                          >
+                            AI
+                          </Text>
+                        </View>
+                      </View>
                       <Pill
                         label={m.mentorLevel}
                         tone={m.mentorLevel === "Pro Mentor" ? "primary" : "default"}

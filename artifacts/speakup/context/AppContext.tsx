@@ -86,9 +86,9 @@ const defaultState: AppState = {
   completedLessons: [],
   totalCalls: 0,
   totalMinutesSpoken: 0,
-  fluency: 30,
-  pronunciation: 35,
-  confidence: 28,
+  fluency: 0,
+  pronunciation: 0,
+  confidence: 0,
   callHistory: [],
   blockedUsers: [],
 };

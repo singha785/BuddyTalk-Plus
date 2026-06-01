@@ -99,11 +99,40 @@ export default function ProfileTab() {
 
         <Text style={sectionHeader(colors)}>Skill progress</Text>
         <Card>
-          <ProgressRow label="Fluency" value={state.fluency} color={colors.primary} />
-          <View style={{ height: 16 }} />
-          <ProgressRow label="Pronunciation" value={state.pronunciation} color={colors.accent} />
-          <View style={{ height: 16 }} />
-          <ProgressRow label="Confidence" value={state.confidence} color={colors.success} />
+          {state.totalCalls === 0 && state.completedLessons.length === 0 ? (
+            <View style={{ alignItems: "center", paddingVertical: 8 }}>
+              <Text
+                style={{
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 14,
+                  color: colors.foreground,
+                  textAlign: "center",
+                }}
+              >
+                No activity yet
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "Inter_400Regular",
+                  fontSize: 13,
+                  color: colors.mutedForeground,
+                  marginTop: 4,
+                  textAlign: "center",
+                  lineHeight: 19,
+                }}
+              >
+                Your fluency, pronunciation, and confidence scores will appear here after your first call or lesson.
+              </Text>
+            </View>
+          ) : (
+            <>
+              <ProgressRow label="Fluency" value={state.fluency} color={colors.primary} />
+              <View style={{ height: 16 }} />
+              <ProgressRow label="Pronunciation" value={state.pronunciation} color={colors.accent} />
+              <View style={{ height: 16 }} />
+              <ProgressRow label="Confidence" value={state.confidence} color={colors.success} />
+            </>
+          )}
         </Card>
 
         <Text style={sectionHeader(colors)}>Safety</Text>

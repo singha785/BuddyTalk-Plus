@@ -141,7 +141,12 @@ export default function MentorDetail() {
         >
           <View style={{ alignItems: "center" }}>
             <Avatar initials={mentor.initials} size={104} color={mentor.accentColor} status={presence?.status} />
-            <Text style={{ fontFamily: "Inter_700Bold", fontSize: 24, color: colors.foreground, marginTop: 14 }}>{mentor.name}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
+              <Text style={{ fontFamily: "Inter_700Bold", fontSize: 24, color: colors.foreground }}>{mentor.name}</Text>
+              <View style={{ backgroundColor: "#EDE9FE", borderRadius: 7, paddingHorizontal: 6, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#5B3DFF" }}>AI</Text>
+              </View>
+            </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
               <Feather name="map-pin" size={12} color={colors.mutedForeground} />
               <Text style={{ fontFamily: "Inter_500Medium", fontSize: 13, color: colors.mutedForeground }}>{mentor.region}</Text>

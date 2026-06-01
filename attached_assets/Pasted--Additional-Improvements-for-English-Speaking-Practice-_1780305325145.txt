@@ -1,0 +1,96 @@
+# Additional Improvements for English Speaking Practice App
+
+## 7. Fix "Your Growth" Section
+
+### Current Problem:
+
+The "Your Growth" section is currently displaying fake or random statistics that do not reflect the actual progress of the user.
+
+### Required Changes:
+
+* Remove all fake growth data.
+* Display only real user progress based on actual app activity.
+* Track and calculate:
+
+  * Total practice calls completed
+  * Total speaking minutes
+  * Total lessons completed
+  * Daily practice streak
+  * Weekly practice streak
+  * Pronunciation improvement score
+  * Vocabulary learned
+  * Confidence score based on actual usage
+* Generate charts and analytics from real user data only.
+* Update growth metrics in real time.
+
+---
+
+## 8. Improve Live Mentor Section
+
+### Current Problem:
+
+The Live Mentor section currently shows fake mentor profiles and fake locations.
+
+### Required Changes:
+
+* Remove all fake mentor data.
+* Only display:
+
+  * Verified real mentors, or
+  * System-generated AI mentors clearly labeled as "AI Mentor".
+* Never present AI-generated mentors as real people.
+
+### Mentor Verification System:
+
+For real mentors:
+
+* Profile verification
+* Profile photo verification
+* Language proficiency verification
+* Mentor rating system
+* Experience level display
+
+### Geographic Preferences:
+
+* Prioritize mentor availability from:
+
+  * India
+  * Nepal
+* Display mentor country and language proficiency accurately.
+* Allow users to filter mentors by country, language, rating, and availability.
+
+### Fair Access Policy:
+
+Do not exclude users, mentors, or learners solely because of nationality or country. Access decisions should be based on platform policies, verification status, safety requirements, language skills, and user preferences rather than nationality.
+
+---
+
+## 9. Regional Availability and Compliance Controls
+
+### Requirement:
+
+Implement a region-management system for app availability.
+
+### Features:
+
+* GPS and IP-based region detection.
+* Compliance with local laws, regulations, and platform policies.
+* Region-specific availability settings managed from the admin panel.
+* Allow administrators to:
+
+  * Enable service in specific countries.
+  * Disable service in specific countries if required by legal, regulatory, operational, or safety reasons.
+* Show a clear message when the service is unavailable in a region.
+
+### Security Measures:
+
+* Fraud detection system.
+* VPN/proxy risk monitoring.
+* Suspicious account detection.
+* Real-time moderation tools.
+* User reporting and blocking system.
+* Account verification options.
+
+### Important:
+
+Regional restrictions should be applied through configurable policy settings and legal/compliance requirements rather than automatically blocking people based solely on nationality.

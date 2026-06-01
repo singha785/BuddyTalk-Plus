@@ -60,6 +60,20 @@ export default function Home() {
     [now],
   );
 
+  const weekAgoTs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const weeklyCallCount = useMemo(
+    () => state.callHistory.filter((c) => new Date(c.date).getTime() >= weekAgoTs).length,
+    [state.callHistory, weekAgoTs],
+  );
+  const weeklyMins = useMemo(
+    () =>
+      state.callHistory
+        .filter((c) => new Date(c.date).getTime() >= weekAgoTs)
+        .reduce((sum, c) => sum + c.durationMinutes, 0),
+    [state.callHistory, weekAgoTs],
+  );
+  const hasActivity = state.totalCalls > 0 || state.completedLessons.length > 0;
+
   const greeting = (() => {
     const hr = new Date().getHours();
     if (hr < 12) return "Good morning";
@@ -959,31 +973,152 @@ export default function Home() {
             </ScrollView>
           </View>
 
-          {/* Progress */}
+          {/* Growth */}
           <View style={{ marginTop: 26 }}>
             <SectionHeaderRow title="Your growth" />
-            <View style={{ marginTop: 12 }}>
+
+            {/* Real stats row */}
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+              <GrowthTile
+                icon="phone"
+                value={state.totalCalls}
+                label="Calls"
+                colors={colors}
+              />
+              <GrowthTile
+                icon="clock"
+                value={state.totalMinutesSpoken}
+                label="Mins"
+                colors={colors}
+              />
+              <GrowthTile
+                icon="book-open"
+                value={state.completedLessons.length}
+                label="Lessons"
+                colors={colors}
+              />
+            </View>
+
+            {/* Weekly activity */}
+            {weeklyCallCount > 0 ? (
+              <View style={{ marginTop: 10 }}>
+                <Card>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: colors.primary + "1A",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Feather name="bar-chart-2" size={16} color={colors.primary} />
+                    </View>
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 13,
+                          color: colors.foreground,
+                        }}
+                      >
+                        This week
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 12,
+                          color: colors.mutedForeground,
+                          marginTop: 2,
+                        }}
+                      >
+                        {weeklyCallCount} call{weeklyCallCount !== 1 ? "s" : ""} · {weeklyMins} min{weeklyMins !== 1 ? "s" : ""} spoken
+                      </Text>
+                    </View>
+                    {state.streak > 0 ? (
+                      <View
+                        style={{
+                          marginLeft: "auto",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          backgroundColor: "#FFF3E0",
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 5,
+                        }}
+                      >
+                        <Text style={{ fontSize: 14 }}>🔥</Text>
+                        <Text
+                          style={{
+                            fontFamily: "Inter_700Bold",
+                            fontSize: 13,
+                            color: "#E65100",
+                          }}
+                        >
+                          {state.streak}d
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </Card>
+              </View>
+            ) : null}
+
+            {/* Skill bars */}
+            <View style={{ marginTop: 10 }}>
               <Card>
-                <ProgressRow
-                  label="Fluency"
-                  emoji="🗣️"
-                  value={state.fluency}
-                  color={colors.primary}
-                />
-                <View style={{ height: 16 }} />
-                <ProgressRow
-                  label="Pronunciation"
-                  emoji="🎯"
-                  value={state.pronunciation}
-                  color={colors.accent}
-                />
-                <View style={{ height: 16 }} />
-                <ProgressRow
-                  label="Confidence"
-                  emoji="💪"
-                  value={state.confidence}
-                  color="#0E9F7A"
-                />
+                {!hasActivity ? (
+                  <View style={{ alignItems: "center", paddingVertical: 8 }}>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.foreground,
+                        textAlign: "center",
+                      }}
+                    >
+                      No data yet
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 13,
+                        color: colors.mutedForeground,
+                        marginTop: 4,
+                        textAlign: "center",
+                        lineHeight: 19,
+                      }}
+                    >
+                      Complete a practice call or lesson to start tracking your fluency, pronunciation, and confidence.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <ProgressRow
+                      label="Fluency"
+                      emoji="🗣️"
+                      value={state.fluency}
+                      color={colors.primary}
+                    />
+                    <View style={{ height: 16 }} />
+                    <ProgressRow
+                      label="Pronunciation"
+                      emoji="🎯"
+                      value={state.pronunciation}
+                      color={colors.accent}
+                    />
+                    <View style={{ height: 16 }} />
+                    <ProgressRow
+                      label="Confidence"
+                      emoji="💪"
+                      value={state.confidence}
+                      color="#0E9F7A"
+                    />
+                  </>
+                )}
               </Card>
             </View>
           </View>
@@ -1173,6 +1308,57 @@ function ProgressRow({
         </Text>
       </View>
       <ProgressBar value={value} color={color} height={8} />
+    </View>
+  );
+}
+
+function GrowthTile({
+  icon,
+  value,
+  label,
+  colors,
+}: {
+  icon: React.ComponentProps<typeof Feather>["name"];
+  value: number;
+  label: string;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.card,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 8,
+        gap: 6,
+      }}
+    >
+      <Feather name={icon} size={18} color={colors.primary} />
+      <Text
+        style={{
+          fontFamily: "Inter_700Bold",
+          fontSize: 22,
+          color: colors.foreground,
+          lineHeight: 26,
+        }}
+      >
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontFamily: "Inter_500Medium",
+          fontSize: 11,
+          color: colors.mutedForeground,
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
