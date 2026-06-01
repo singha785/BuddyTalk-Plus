@@ -1,0 +1,241 @@
+English Speaking Practice App – Major Improvements & Bug Fixes
+
+You are a senior mobile app developer and UX designer. Improve my English Speaking Practice App for users from India, Pakistan, Bangladesh, Nepal, and other Hindi/Urdu-speaking regions who want to practice spoken English through real conversations.
+
+1. Redesign App Logo & Splash Screen
+
+Current logo looks generic and does not clearly represent English speaking practice.
+
+Requirements:
+Create a modern, professional, and attractive logo.
+Logo should instantly communicate:
+English speaking practice
+Voice calling
+Communication with strangers
+Language learning
+Include elements such as:
+Speech bubbles
+Microphone
+Phone call icon
+English letters (A-Z)
+Global communication theme
+Create an engaging splash screen with:
+App logo
+Tagline:
+"Practice English with Real People"
+Smooth animation during app startup.
+2. Completely Redesign Calling Match System
+Current Problem:
+
+Users can connect only when both people press "Start a Free Call" simultaneously.
+
+New Requirement:
+
+Implement a real-time online calling system.
+
+Features:
+Online/Offline Status
+Show Online/Offline toggle on the top-right corner of the home screen.
+User can manually switch status.
+Green dot = Online.
+Gray dot = Offline.
+Calling Flow
+
+When a user clicks:
+
+"Start a Free Call"
+
+System should:
+
+Search for available online users.
+Ring one online user automatically.
+Show:
+Calling...
+Ringing...
+Receiver gets:
+Incoming Call Screen
+Accept button
+Reject button
+If rejected:
+Automatically call another available online user.
+If accepted:
+Start voice call immediately.
+
+No need for both users to press Start Call at the same time.
+
+3. Add Professional Calling Experience
+Outgoing Call Features
+Ringing tone while call is connecting.
+Calling animation.
+Connection status indicator.
+Incoming Call Features
+Incoming ringtone.
+Accept button.
+Reject button.
+Caller profile display.
+During Call
+
+Add:
+
+Speaker button
+Mute button
+End call button
+Call timer
+Connection quality indicator
+
+Similar to WhatsApp and normal phone calling UI.
+
+4. CRITICAL BUG FIX – Voice Not Transferring
+Current Issue:
+
+Call appears connected but neither user can hear each other.
+
+Required Fix:
+
+Investigate and fix:
+
+Microphone permission handling
+Audio stream transmission
+Audio receiving channel
+WebRTC implementation
+Socket connection issues
+ICE candidate exchange
+STUN/TURN server configuration
+Audio codec configuration
+Network synchronization issues
+Expected Result:
+
+When User A speaks:
+
+User B must hear clearly.
+
+When User B speaks:
+
+User A must hear clearly.
+
+Enable real-time two-way voice communication with low latency.
+
+This is the highest priority issue.
+
+5. Premium Video Calling Feature
+
+Add optional video calling.
+
+Requirements:
+Video call button inside chat/call section.
+Video calling is Premium only.
+Video call unlock condition:
+User must have at least 10,000 Coins.
+Premium Benefits:
+HD Video Calling
+Face-to-face English practice
+Better pronunciation learning
+Improved communication skills
+Video Call Features:
+Front camera
+Rear camera switch
+Mute
+Speaker
+Video On/Off
+Call timer
+End call
+6. Improve Lesson Section with Audio Learning
+
+Current lessons only show text.
+
+Problem:
+
+Users cannot listen and repeat.
+
+Required Feature:
+
+Add Listen & Repeat functionality.
+
+Alphabetical Sounds Section
+
+For every alphabet:
+
+Example:
+
+A → Audio pronunciation
+
+Buttons:
+
+▶ Listen
+🎤 Repeat
+🔄 Practice Again
+
+System should:
+
+Play pronunciation.
+Allow user to repeat.
+Record voice.
+Compare pronunciation.
+Everyday Greetings
+
+Examples:
+
+Good Morning
+Good Afternoon
+Good Evening
+How are you?
+
+For each lesson:
+
+Add:
+
+Audio playback
+Listen button
+Repeat button
+Pronunciation practice
+Introduce Yourself Section
+
+Provide professional voice examples:
+
+Examples:
+
+My name is...
+I am from...
+I work as...
+
+Features:
+
+Listen
+Repeat
+Record
+Practice score
+Apply Same System to All Lessons
+
+Every lesson should have:
+
+Native English audio
+Listen button
+Repeat button
+Record voice option
+Pronunciation feedback
+Practice score
+Unlimited retry
+Final Goal
+
+Transform the app into a complete English Speaking Practice Platform with:
+
+Professional branding
+Real-time voice calling
+Proper online/offline system
+Working audio communication
+Call ringtone support
+Speaker functionality
+Premium video calling
+Interactive speaking lessons
+Listen & Repeat practice
+Pronunciation improvement system
+Smooth and modern user experience
+
+Priority Order:
+
+Fix voice call audio transmission.
+Implement online/offline calling system.
+Add ringtone and speaker features.
+Improve lesson audio practice.
+Add premium video calling.
+Redesign logo and splash screen.
