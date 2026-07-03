@@ -1,0 +1,140 @@
+I have already built an English Speaking Practice application, but several core features are either broken or currently implemented as dummy functionality. I want you to carefully analyze the entire application, identify the issues, and fix them properly without breaking any existing working features. The final application should be production-ready and all features should work exactly as intended.
+
+1. Login & Authentication
+
+The signup process is currently not working correctly. While creating a new account, users receive an error message and are unable to register successfully. Please identify the root cause and fix the signup process so that new users can register without any errors.
+
+The Magic Link Authentication feature is also completely broken. Users either do not receive the login link or the authentication process fails. Fix the complete Magic Link authentication flow so users can securely log in without any issues.
+
+2. Free Call Feature
+
+The Start a Free Call feature opens successfully and searches for another online user. However, the current call connection logic is incorrect.
+
+Right now, a call connects only when both users press the Call button simultaneously.
+
+This is not the behavior I want.
+
+Instead, the application should work like WhatsApp, Telegram, Google Meet, or any modern calling application.
+
+The required behavior is:
+
+Whenever a user is online, another online user should be able to call them directly.
+The receiver should receive an incoming call notification.
+The receiver should have Accept and Reject buttons.
+If the receiver accepts, the call should connect immediately.
+If the receiver rejects or does not answer, the caller should be informed.
+The caller should never have to wait for the receiver to manually press the "Start Free Call" button.
+
+Please redesign the call connection logic accordingly.
+
+3. Voice Communication
+
+Even after a call connects successfully, voice communication does not work.
+
+The application only shows that the call is connected, but:
+
+The caller cannot hear the receiver.
+The receiver cannot hear the caller.
+No audio is transmitted.
+
+Please fix the complete voice communication system.
+
+Ensure that:
+
+WebRTC audio streaming works properly.
+Microphone permissions are requested correctly.
+ICE Candidate exchange is working.
+STUN/TURN server configuration is correct.
+Audio tracks are attached correctly.
+Both users can hear each other immediately after the call connects.
+Voice latency should be minimal.
+4. Daily Tasks
+
+Currently, almost every Daily Task is implemented as a dummy feature. Users can press the Done button without actually completing the task.
+
+I want every Daily Task to be fully functional with proper validation.
+
+Greet Five People
+
+Currently, users can mark the task as completed without greeting five people.
+
+Instead:
+
+Count every successful greeting.
+Only after greeting five different users should the task be marked as completed.
+The Done button should remain disabled until then.
+Record Your Self-Introduction
+
+Currently this feature behaves like a dummy feature.
+
+Instead:
+
+Users must actually record their self-introduction.
+Verify that a valid recording has been completed.
+Only then should the task be marked as completed.
+Listen and Repeat
+
+Currently this feature is also dummy.
+
+Instead:
+
+Play a word or sentence.
+Ask the user to repeat it.
+Use speech recognition or voice validation.
+Verify that the user actually repeated the sentence.
+Only after successful validation should the task be marked as completed.
+Learn 10 New Words
+
+Currently users can press Done without learning anything.
+
+Instead:
+
+Show all 10 words.
+Ensure the user reviews every word.
+Track progress.
+Only after completing all ten words should the task be marked as completed.
+Tongue Twister Challenge
+
+Currently users can complete the challenge without attempting it.
+
+Instead:
+
+Play or display the tongue twister.
+Require the user to speak it.
+Validate that an attempt has been made.
+Mark the task as completed only after successful completion.
+5. Task Validation Rules
+
+Every Daily Task must include proper validation.
+
+The Done button must never become active unless the task has actually been completed.
+
+No task should behave like a dummy implementation.
+
+All task completion status should be saved in the database and remain available after the user logs in again.
+
+6. General Improvements
+
+While fixing these issues:
+
+Do not remove or break any existing working feature.
+Preserve the existing UI and design as much as possible.
+Optimize performance wherever necessary.
+Remove unnecessary code.
+Follow best coding practices.
+Fix any hidden bugs related to authentication, calling, database synchronization, or state management.
+Make the application production-ready.
+Final Goal
+
+I want this application to become a fully functional real-time English Speaking Practice Platform where users can:
+
+Create accounts successfully.
+Log in using Magic Link.
+See online users.
+Call any online user directly.
+Receive incoming calls with Accept/Reject options.
+Have smooth, low-latency two-way voice communication.
+Complete all Daily Tasks through actual interaction instead of dummy implementations.
+Have all progress stored permanently in the database.
+
+The final application should provide a smooth, professional, bug-free experience comparable to modern applications like WhatsApp or Telegram for calling, while focusing specifically on English speaking practice. Before making any changes, analyze the existing codebase thoroughly, identify the root causes of each issue, and implement robust, production-quality fixes rather than temporary workarounds.

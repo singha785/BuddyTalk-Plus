@@ -1,0 +1,51 @@
+6. AI-Powered Lessons & Pronunciation Practice
+
+The Lessons section should not be a simple reading module. I want it to include AI-powered pronunciation coaching so users can improve their English speaking skills by practicing with real-time feedback.
+
+Required Features
+Each lesson should contain words, phrases, and complete sentences.
+The AI should first pronounce the word or sentence using a natural human-like voice (Text-to-Speech).
+After listening, the user should repeat the same word or sentence.
+The application should capture the user's voice using Speech-to-Text.
+AI should compare the user's pronunciation with the expected pronunciation.
+The system should identify pronunciation mistakes and provide detailed feedback.
+If the pronunciation is incorrect, the AI should highlight the specific words or sounds that need improvement.
+The AI should encourage the user to repeat the sentence until the pronunciation reaches an acceptable accuracy level.
+The lesson should only move to the next word or sentence after successful pronunciation.
+Display a pronunciation score (for example, 0–100%) for every attempt.
+Maintain a history of pronunciation scores so users can track their improvement over time.
+The AI should sound natural, friendly, and supportive while guiding the user.
+AI Capabilities
+
+The pronunciation coach should be capable of:
+
+Detecting incorrect pronunciation.
+Detecting missing or skipped words.
+Detecting extra words spoken by the user.
+Identifying incorrect stress and intonation wherever possible.
+Providing pronunciation tips to improve fluency.
+Allowing unlimited practice attempts before moving to the next lesson.
+Lesson Completion Rules
+
+A lesson should not be marked as completed simply because the user opened it.
+
+Instead:
+
+Every sentence in the lesson must be practiced.
+The AI must verify pronunciation accuracy.
+The lesson should only be marked as completed after all required sentences have been pronounced successfully.
+Expected User Experience
+
+The Lessons section should function like an intelligent English-speaking coach rather than a simple lesson viewer. It should continuously listen, evaluate pronunciation, provide corrections, and guide the user until they can pronounce each word and sentence clearly and confidently.
+
+Additional Requirement
+
+Please integrate a reliable AI speech technology (such as OpenAI Realtime API, Azure AI Speech, Google Cloud Speech, or another production-ready speech service) that supports:
+
+Natural Text-to-Speech (TTS)
+Accurate Speech-to-Text (STT)
+Real-time pronunciation assessment
+Low-latency voice interaction
+High accuracy for Indian English as well as other common English accents
+
+The pronunciation feedback should be fast, accurate, and suitable for real-time English speaking practice.
