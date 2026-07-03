@@ -36,7 +36,7 @@ const CALL_TIMEOUT_MS = 40_000;
 export default function PracticeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { freeMinutesRemaining, consumeFreeMinutes, recordCall } = useApp();
+  const { freeMinutesRemaining, consumeFreeMinutes, recordCall, completeTask, trackGreeting, state } = useApp();
   const socket = useSocket();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isIncomingMode = mode === "incoming";
@@ -78,11 +78,16 @@ export default function PracticeScreen() {
   }, [ringPulse, stage]);
 
   // ── WebRTC ──────────────────────────────────────────────────────────────────
+  const [micError, setMicError] = useState<string | null>(null);
+
   const webrtc = useWebRTC({
     onCallEnded: useCallback(() => {
       if (stage === "in-call") void endCall();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stage]),
+    onError: useCallback((msg: string) => {
+      setMicError(msg);
+    }, []),
   });
 
   const clearCallTimeout = () => {

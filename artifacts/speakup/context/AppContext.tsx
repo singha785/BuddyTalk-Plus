@@ -65,6 +65,7 @@ export type AppState = {
   callHistory: CallHistoryEntry[];
   blockedUsers: string[];
   lessonScores: LessonScoreEntry[];
+  greetedPartners: string[];
 };
 
 const FREE_DAILY_MINUTES = 20;
@@ -101,6 +102,7 @@ const defaultState: AppState = {
   callHistory: [],
   blockedUsers: [],
   lessonScores: [],
+  greetedPartners: [],
 };
 
 type AppContextValue = {
@@ -131,6 +133,7 @@ type AppContextValue = {
   completeLesson: (lessonId: string) => Promise<void>;
   savePronunciationScore: (lessonId: string, score: PronunciationScore) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
+  trackGreeting: (partnerId: string) => Promise<void>;
   blockUser: (name: string) => Promise<void>;
   unblockUser: (name: string) => Promise<void>;
   reportCall: (callId: string) => Promise<void>;
@@ -297,6 +300,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, persist],
   );
 
+  const trackGreeting = useCallback(
+    async (partnerId: string) => {
+      if (!partnerId || state.greetedPartners.includes(partnerId)) return;
+      const greetedPartners = [...state.greetedPartners, partnerId];
+      const GREET_TASK_ID = "task-greet-5";
+      const GREET_TASK_REWARD = 8;
+      const alreadyComplete = state.completedTasks.includes(GREET_TASK_ID);
+      const nowComplete = !alreadyComplete && greetedPartners.length >= 5;
+      await persist({
+        ...state,
+        greetedPartners,
+        completedTasks: nowComplete
+          ? [...state.completedTasks, GREET_TASK_ID]
+          : state.completedTasks,
+        coins: nowComplete ? state.coins + GREET_TASK_REWARD : state.coins,
+      });
+    },
+    [state, persist],
+  );
+
   const blockUser = useCallback<AppContextValue["blockUser"]>(
     async (name) => {
       if (state.blockedUsers.includes(name)) return;
@@ -398,6 +421,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeLesson,
       savePronunciationScore,
       setPremium,
+      trackGreeting,
       blockUser,
       unblockUser,
       reportCall,
@@ -406,7 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [
     state, ready, completeOnboarding, addCoins, spendCoins, watchAdReward,
     consumeFreeMinutes, recordCall, completeTask, completeLesson,
-    savePronunciationScore, setPremium, blockUser, unblockUser, reportCall, resetAccount,
+    savePronunciationScore, setPremium, trackGreeting, blockUser, unblockUser, reportCall, resetAccount,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

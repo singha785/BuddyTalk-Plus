@@ -1,0 +1,141 @@
+IMPORTANT:
+
+This is an EXISTING English Speaking Practice application.
+
+Do NOT create a new application.
+Do NOT create a new UI.
+Do NOT redesign any screen.
+Do NOT create videos, animations, presentations, demos, or mockups.
+Do NOT remove any existing working functionality.
+
+Your task is ONLY to analyze the current codebase, identify the root cause of the issues listed below, and fix them within the existing project. Preserve the existing architecture and UI as much as possible.
+
+========================
+TASK 1 – FIX LOGIN & AUTHENTICATION
+========================
+
+The authentication module already exists but is not working correctly.
+
+Please inspect the authentication flow and fix all related issues.
+
+Problems:
+
+• New users cannot create an account because Signup returns an error.
+• Magic Link authentication is broken.
+
+Required Result:
+
+✓ Users should be able to create new accounts successfully.
+✓ Email verification should work correctly if enabled.
+✓ Magic Link login should work correctly.
+✓ Authentication sessions should persist correctly.
+✓ No authentication errors should remain.
+
+Do not rewrite the authentication module unless absolutely necessary. Fix the existing implementation.
+
+========================
+TASK 2 – FIX FREE CALL CONNECTION
+========================
+
+The Free Call feature already exists.
+
+Do NOT rebuild it.
+
+Only fix the existing implementation.
+
+Current problem:
+
+A call only connects when BOTH users press the "Start Free Call" button.
+
+This logic is incorrect.
+
+Required behavior:
+
+• When User A calls User B,
+• User B immediately receives an Incoming Call popup.
+• User B should see:
+
+Accept
+Reject
+
+If Accept is pressed,
+
+connect the call immediately.
+
+If Reject is pressed,
+
+notify User A.
+
+The receiver should NEVER need to press "Start Free Call".
+
+The call flow should behave like WhatsApp or Telegram voice calling.
+
+========================
+TASK 3 – FIX VOICE COMMUNICATION
+========================
+
+The call connects but audio does not work.
+
+Current problems:
+
+• Caller cannot hear receiver.
+• Receiver cannot hear caller.
+• Audio stream is not transmitted.
+
+Please inspect the complete WebRTC implementation.
+
+Verify and fix:
+
+• Microphone permissions
+• Media stream initialization
+• Peer connection
+• ICE Candidate exchange
+• SDP Offer/Answer flow
+• STUN/TURN configuration
+• Audio tracks
+• Connection lifecycle
+
+After fixing,
+
+both users must hear each other immediately after the call connects.
+
+========================
+TASK 4 – FIX DAILY TASKS
+========================
+
+Daily Tasks currently behave like dummy features.
+
+The Done button becomes active even when the activity has not been completed.
+
+Do NOT keep dummy implementations.
+
+Replace them with actual working logic.
+
+Task 1:
+
+Greet Five People
+
+Count every successful greeting.
+
+Only after greeting five different users should the task become complete.
+
+Task 2:
+
+Record Self Introduction
+
+Require the user to actually record their introduction.
+
+Verify the recording before enabling completion.
+
+Store completion status permanently in the database.
+
+========================
+
+After implementing these fixes,
+
+test every modified feature to ensure:
+
+• No existing functionality is broken.
+• No new bugs are introduced.
+• Existing UI remains unchanged.
+• The implementation is production-ready.
