@@ -1,8 +1,25 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "HTH4uvcYvAh-4VgbZ590U"
 uri = "file://artifacts/speakup/assets/images/icon.png"
 type = "image"
 title = "speakup app icon"
+
+[[generated]]
+id = "X2JpsOVXzzNJMouGUpLac"
+uri = "file://artifacts/mockup-sandbox/public/ai-orb.png"
+type = "image"
+title = "glowing ai orb"
+
+[[outputs]]
+id = "-NE4Q3xoFcOgHIR5QJY6e"
+uri = "file://artifacts/mockup-sandbox/public/mentor1.jpg"
+type = "image"
+title = "Friendly professional south asian female tutor looking at camera, modern lighting"
+
+[[outputs]]
+id = "f1Tui8r0T30ttNKqzzFd3"
+uri = "file://artifacts/mockup-sandbox/public/mentor2.jpg"
+type = "image"
+title = "Friendly professional south asian male teacher, modern office background"

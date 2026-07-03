@@ -1,0 +1,224 @@
+already built an English Speaking Practice Application, but several core features are either broken or currently implemented as dummy functionality. I want you to carefully analyze the entire application, identify every issue, and fix them properly without breaking any existing working features. Please do not use temporary workarounds. Instead, implement production-quality solutions with clean, optimized, and maintainable code.
+
+The final application should be stable, scalable, and ready for production.
+
+1. Login & Authentication
+
+The signup process is currently not working correctly. While creating a new account, users receive an error message and are unable to register successfully.
+
+Please identify the root cause and fix the signup process so that new users can register successfully without any errors.
+
+The Magic Link Authentication feature is also completely broken. Users either do not receive the login link or the authentication process fails.
+
+Please fix the complete Magic Link authentication flow so users can securely log in without any issues.
+
+2. Free Call Feature
+
+The Start a Free Call feature opens successfully and searches for another online user. However, the current call connection logic is incorrect.
+
+Currently, a call connects only when both users press the Call button simultaneously.
+
+This is not the behavior I want.
+
+The application should work similar to WhatsApp, Telegram, Google Meet, or any modern calling application.
+
+Required Behavior
+Whenever a user is online, another online user should be able to call them directly.
+The receiver should receive an incoming call notification.
+The receiver should have Accept and Reject options.
+If the receiver accepts, the call should connect immediately.
+If the receiver rejects or does not answer, the caller should be informed.
+The caller should never have to wait until the receiver also presses the Start Free Call button.
+
+Please redesign the complete call connection logic accordingly.
+
+3. Voice Communication
+
+Even after the call connects successfully, voice communication does not work.
+
+The application only shows that the call has connected, but:
+
+The caller cannot hear the receiver.
+The receiver cannot hear the caller.
+No audio is transmitted.
+
+Please fix the complete voice communication system.
+
+Ensure that:
+
+WebRTC audio streaming works correctly.
+Microphone permissions are handled properly.
+ICE Candidate exchange works correctly.
+STUN/TURN server configuration is correct.
+Audio tracks are attached properly.
+Both users can hear each other immediately after the call connects.
+Voice latency should be minimal.
+4. Daily Tasks
+
+Currently, almost every Daily Task is implemented as a dummy feature.
+
+Users can simply press the Done button without actually completing the required activity.
+
+I want every Daily Task to become fully functional with proper validation.
+
+Greet Five People
+
+Currently users can complete the task without greeting anyone.
+
+Instead:
+
+Count every successful greeting.
+Only after greeting five different users should the task be marked as completed.
+The Done button must remain disabled until the task is genuinely completed.
+Record Your Self-Introduction
+
+Currently this feature behaves like a dummy implementation.
+
+Instead:
+
+Users must actually record their self-introduction.
+Verify that a valid recording has been completed.
+Only then should the task be marked as completed.
+Listen and Repeat
+
+Currently this feature is also a dummy implementation.
+
+Instead:
+
+Play a word or sentence.
+Ask the user to repeat it.
+Use Speech Recognition or voice validation.
+Verify that the user actually repeated the sentence.
+Only after successful validation should the task be marked as completed.
+Learn 10 New Words
+
+Currently users can press Done without learning anything.
+
+Instead:
+
+Display all ten words.
+Ensure the user reviews every word.
+Track learning progress.
+Only after completing all ten words should the task be marked as completed.
+Tongue Twister Challenge
+
+Currently users can complete the challenge without attempting it.
+
+Instead:
+
+Display or play the tongue twister.
+Require the user to speak it.
+Validate that a genuine attempt has been made.
+Mark the challenge as completed only after successful completion.
+Task Validation Rules
+
+Every Daily Task must include proper validation.
+
+The Done button must never become active unless the task has actually been completed.
+
+No Daily Task should behave like a dummy implementation.
+
+All task completion progress should be stored permanently in the database and remain available after users log in again.
+
+5. AI-Powered Lessons & Pronunciation Practice
+
+The Lessons section should not be a simple reading module.
+
+I want it to become a complete AI-powered English Speaking Coach that helps users improve pronunciation, fluency, and speaking confidence through real-time AI feedback.
+
+Required Features
+
+Each lesson should contain:
+
+Words
+Phrases
+Complete Sentences
+Conversations
+
+For every lesson:
+
+AI should first pronounce the word or sentence using a natural human-like voice (Text-to-Speech).
+After listening, the user should repeat it.
+The application should capture the user's voice using Speech-to-Text.
+AI should compare the user's pronunciation with the correct pronunciation.
+AI should detect pronunciation mistakes.
+AI should identify missing words.
+AI should identify extra words.
+AI should identify incorrect pronunciation.
+AI should provide pronunciation correction.
+AI should explain which words need improvement.
+AI should encourage the user to repeat until pronunciation becomes correct.
+Unlimited practice attempts should be allowed.
+
+The lesson should not automatically move to the next sentence.
+
+Instead, it should only continue when the pronunciation reaches an acceptable accuracy level.
+
+Pronunciation Score
+
+Every pronunciation attempt should generate a score.
+
+Example:
+
+Pronunciation Accuracy (%)
+Fluency Score
+Completeness Score
+Overall Speaking Score
+
+The score history should be saved so users can monitor their improvement over time.
+
+Lesson Completion Rules
+
+A lesson should never be marked as completed simply because the user opened it.
+
+Instead:
+
+Every sentence must be practiced.
+AI must verify pronunciation accuracy.
+Every required activity must be completed.
+Only then should the lesson be marked as completed.
+AI Speech Technology
+
+Please integrate a reliable production-ready AI speech service that supports:
+
+Natural Text-to-Speech (TTS)
+Accurate Speech-to-Text (STT)
+Real-time Pronunciation Assessment
+Low-latency Voice Processing
+High Accuracy for Indian English and other common English accents
+
+The pronunciation coach should behave like a real English teacher rather than a simple speech recognizer.
+
+6. General Improvements
+
+While implementing these changes:
+
+Do not remove or break any existing working feature.
+Preserve the existing UI and design as much as possible.
+Optimize performance wherever necessary.
+Remove unnecessary code.
+Follow clean architecture and best coding practices.
+Fix hidden bugs related to authentication, calling, state management, synchronization, and database operations.
+Improve overall application stability.
+Ensure the application is scalable and production-ready.
+Final Goal
+
+I want this application to become a complete AI-powered Real-Time English Speaking Practice Platform.
+
+The final application should allow users to:
+
+Create accounts successfully.
+Log in securely using Magic Link Authentication.
+View online users.
+Call any online user directly.
+Receive incoming call notifications with Accept and Reject options.
+Experience smooth, real-time, low-latency two-way voice communication.
+Practice pronunciation with an AI-powered speaking coach.
+Receive real-time pronunciation correction and detailed speaking feedback.
+Improve fluency through guided speaking lessons.
+Complete all Daily Tasks only after genuine completion.
+Have all lesson progress, speaking scores, and Daily Task progress stored permanently in the database.
+
+The overall user experience should be smooth, professional, intelligent, and comparable to modern applications such as WhatsApp or Telegram for calling, while offering an advanced AI-powered English speaking learning experience similar to ELSA Speak, Duolingo English, or other professional pronunciation training platforms.
+
+Before making any changes, thoroughly analyze the existing codebase, identify the root cause of every issue, and implement robust, production-quality solutions instead of temporary fixes. Ensure the application is reliable, scalable, secure, and fully functional for real-world users.
