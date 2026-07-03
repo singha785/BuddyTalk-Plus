@@ -1,0 +1,90 @@
+I want to improve the existing Lessons feature.
+
+1. Add multiple AI voice options.
+
+The user should be able to choose the lesson voice before starting.
+
+Available voices should include:
+
+• Female Indian English
+• Male Indian English
+• Female American English
+• Male American English
+• Female British English
+• Male British English
+
+The default voice should be Female Indian English.
+
+Use high-quality natural neural voices instead of robotic voices.
+
+=========================
+
+2. Pronunciation Practice
+
+For every lesson:
+
+• AI should speak the word or sentence first.
+• The user repeats it.
+• Convert user speech to text.
+• Compare pronunciation with the expected sentence.
+• Detect pronunciation mistakes.
+• Detect skipped words.
+• Detect extra words.
+• Detect incorrect pronunciation.
+• Give pronunciation feedback.
+• Allow unlimited retry.
+
+Do not move to the next sentence until the user completes the current one successfully.
+
+=========================
+
+3. Speaking Score
+
+After every attempt calculate:
+
+• Pronunciation Accuracy
+• Fluency
+• Completeness
+• Overall Speaking Score
+
+Store the scores in the database so users can track progress.
+
+=========================
+
+4. Lesson Completion
+
+A lesson should NEVER be marked complete simply because it was opened.
+
+Only mark it complete after:
+
+• Every sentence is practiced.
+• Pronunciation validation is successful.
+• All lesson activities are completed.
+
+=========================
+
+5. Voice Quality
+
+The AI voice should sound like a real English teacher.
+
+The Female Indian English voice should sound natural and friendly.
+
+The Male Indian English voice should also sound natural.
+
+Avoid robotic voices.
+
+=========================
+
+6. Performance
+
+Keep latency as low as possible.
+
+Cache voice data where appropriate.
+
+Do not break any existing lesson functionality.
+
+Do not change the UI unnecessarily.
+
+Only extend the existing Lessons module.
+
+At the end, verify that all existing lesson features continue to work correctly after implementing these improvements.

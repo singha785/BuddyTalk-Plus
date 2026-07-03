@@ -9,6 +9,7 @@ import React, {
 } from "react";
 
 import { useAuth } from "@/context/AuthContext";
+import type { PronunciationScore } from "@/utils/pronunciationScore";
 
 export type UserGoal = "job" | "study" | "daily" | "travel";
 export type UserLevel = "Beginner" | "Intermediate" | "Advanced";
@@ -25,7 +26,7 @@ export type CallType = "practice" | "mentor";
 
 export type CallHistoryEntry = {
   id: string;
-  date: string; // ISO timestamp
+  date: string;
   type: CallType;
   partnerName: string;
   partnerInitials: string;
@@ -37,13 +38,20 @@ export type CallHistoryEntry = {
   reported?: boolean;
 };
 
+export type LessonScoreEntry = {
+  lessonId: string;
+  scores: PronunciationScore[];
+  bestOverall: number;
+  lastPracticed: string;
+};
+
 export type AppState = {
   profile: UserProfile;
   coins: number;
   premium: boolean;
   streak: number;
   lastOpened: string | null;
-  freeMinutesUsed: number; // resets daily
+  freeMinutesUsed: number;
   freeMinutesDate: string | null;
   adsWatchedToday: number;
   adsWatchedDate: string | null;
@@ -51,11 +59,12 @@ export type AppState = {
   completedLessons: string[];
   totalCalls: number;
   totalMinutesSpoken: number;
-  fluency: number; // 0..100
+  fluency: number;
   pronunciation: number;
   confidence: number;
   callHistory: CallHistoryEntry[];
   blockedUsers: string[];
+  lessonScores: LessonScoreEntry[];
 };
 
 const FREE_DAILY_MINUTES = 20;
@@ -91,6 +100,7 @@ const defaultState: AppState = {
   confidence: 0,
   callHistory: [],
   blockedUsers: [],
+  lessonScores: [],
 };
 
 type AppContextValue = {
@@ -119,6 +129,7 @@ type AppContextValue = {
   }) => Promise<CallHistoryEntry>;
   completeTask: (taskId: string, reward: number) => Promise<void>;
   completeLesson: (lessonId: string) => Promise<void>;
+  savePronunciationScore: (lessonId: string, score: PronunciationScore) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
   blockUser: (name: string) => Promise<void>;
   unblockUser: (name: string) => Promise<void>;
@@ -176,7 +187,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  // Sync profile mirror from authoritative auth user (after login/refresh).
   useEffect(() => {
     if (!authUser) return;
     setState((prev) => {
@@ -207,12 +217,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = useCallback<AppContextValue["completeOnboarding"]>(
     async ({ name, goal, level }) => {
-      // Persist to server first; server is the source of truth for the auth user.
       try {
         await serverUpdateProfile({ name, goal, level, onboarded: true });
       } catch {
-        // Continue with local state even if the server call fails so the user
-        // is not stuck. Auth refresh will reconcile later.
+        // continue locally
       }
       const next: AppState = {
         ...state,
@@ -255,10 +263,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const consumeFreeMinutes = useCallback<AppContextValue["consumeFreeMinutes"]>(
     async (minutes) => {
       const rolled = rollDailyResets(state);
-      await persist({
-        ...rolled,
-        freeMinutesUsed: rolled.freeMinutesUsed + minutes,
-      });
+      await persist({ ...rolled, freeMinutesUsed: rolled.freeMinutesUsed + minutes });
     },
     [state, persist],
   );
@@ -295,20 +300,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const blockUser = useCallback<AppContextValue["blockUser"]>(
     async (name) => {
       if (state.blockedUsers.includes(name)) return;
-      await persist({
-        ...state,
-        blockedUsers: [...state.blockedUsers, name],
-      });
+      await persist({ ...state, blockedUsers: [...state.blockedUsers, name] });
     },
     [state, persist],
   );
 
   const unblockUser = useCallback<AppContextValue["unblockUser"]>(
     async (name) => {
-      await persist({
-        ...state,
-        blockedUsers: state.blockedUsers.filter((n) => n !== name),
-      });
+      await persist({ ...state, blockedUsers: state.blockedUsers.filter((n) => n !== name) });
     },
     [state, persist],
   );
@@ -317,9 +316,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (callId) => {
       await persist({
         ...state,
-        callHistory: state.callHistory.map((c) =>
-          c.id === callId ? { ...c, reported: true } : c,
-        ),
+        callHistory: state.callHistory.map((c) => (c.id === callId ? { ...c, reported: true } : c)),
       });
     },
     [state, persist],
@@ -328,11 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const completeTask = useCallback<AppContextValue["completeTask"]>(
     async (taskId, reward) => {
       if (state.completedTasks.includes(taskId)) return;
-      await persist({
-        ...state,
-        completedTasks: [...state.completedTasks, taskId],
-        coins: state.coins + reward,
-      });
+      await persist({ ...state, completedTasks: [...state.completedTasks, taskId], coins: state.coins + reward });
     },
     [state, persist],
   );
@@ -350,10 +343,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, persist],
   );
 
-  const setPremium = useCallback<AppContextValue["setPremium"]>(
-    async (value) => {
-      await persist({ ...state, premium: value });
+  const savePronunciationScore = useCallback<AppContextValue["savePronunciationScore"]>(
+    async (lessonId, score) => {
+      const existing = state.lessonScores.find((e) => e.lessonId === lessonId);
+      const updatedScores = existing
+        ? existing.scores.slice(-49).concat(score)
+        : [score];
+      const bestOverall = Math.max(...updatedScores.map((s) => s.overall));
+      const entry: LessonScoreEntry = {
+        lessonId,
+        scores: updatedScores,
+        bestOverall,
+        lastPracticed: new Date().toISOString(),
+      };
+      const nextLessonScores = state.lessonScores
+        .filter((e) => e.lessonId !== lessonId)
+        .concat(entry);
+      await persist({
+        ...state,
+        pronunciation: Math.min(100, state.pronunciation + Math.round(score.overall / 25)),
+        lessonScores: nextLessonScores,
+      });
     },
+    [state, persist],
+  );
+
+  const setPremium = useCallback<AppContextValue["setPremium"]>(
+    async (value) => { await persist({ ...state, premium: value }); },
     [state, persist],
   );
 
@@ -364,13 +380,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [persist]);
 
   const value = useMemo<AppContextValue>(() => {
-    const totalAllowed = state.premium
-      ? FREE_DAILY_MINUTES + 20
-      : FREE_DAILY_MINUTES;
-    const freeMinutesRemaining = Math.max(
-      0,
-      totalAllowed - state.freeMinutesUsed,
-    );
+    const totalAllowed = state.premium ? FREE_DAILY_MINUTES + 20 : FREE_DAILY_MINUTES;
+    const freeMinutesRemaining = Math.max(0, totalAllowed - state.freeMinutesUsed);
     const adsRemainingToday = Math.max(0, DAILY_AD_LIMIT - state.adsWatchedToday);
     return {
       state,
@@ -385,6 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       recordCall,
       completeTask,
       completeLesson,
+      savePronunciationScore,
       setPremium,
       blockUser,
       unblockUser,
@@ -392,21 +404,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       resetAccount,
     };
   }, [
-    state,
-    ready,
-    completeOnboarding,
-    addCoins,
-    spendCoins,
-    watchAdReward,
-    consumeFreeMinutes,
-    recordCall,
-    completeTask,
-    completeLesson,
-    setPremium,
-    blockUser,
-    unblockUser,
-    reportCall,
-    resetAccount,
+    state, ready, completeOnboarding, addCoins, spendCoins, watchAdReward,
+    consumeFreeMinutes, recordCall, completeTask, completeLesson,
+    savePronunciationScore, setPremium, blockUser, unblockUser, reportCall, resetAccount,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
