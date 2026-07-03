@@ -1,8 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import * as Speech from "expo-speech";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Platform,
   Pressable as RNPressable,
@@ -29,6 +30,43 @@ export default function LessonScreen() {
 
   const [step, setStep] = useState<number>(0);
   const [marked, setMarked] = useState<Set<number>>(new Set());
+  const [speaking, setSpeaking] = useState(false);
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const speakPhrase = useCallback(
+    (text: string) => {
+      Speech.stop();
+      setSpeaking(true);
+      Speech.speak(text, {
+        language: "en-IN",
+        pitch: 1.0,
+        rate: Platform.OS === "web" ? 0.85 : 0.9,
+        onDone: () => setSpeaking(false),
+        onError: () => setSpeaking(false),
+        onStopped: () => setSpeaking(false),
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!lesson) return;
+    const text = lesson.items[step]?.text;
+    if (!text) return;
+    if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
+    speakTimerRef.current = setTimeout(() => speakPhrase(text), 600);
+    return () => {
+      if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
+      Speech.stop();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, lesson?.id]);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   if (!lesson) {
     return (
@@ -66,6 +104,7 @@ export default function LessonScreen() {
   };
 
   const next = async () => {
+    Speech.stop();
     if (step < total - 1) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       setStep((s) => s + 1);
@@ -163,17 +202,40 @@ export default function LessonScreen() {
               marginTop: 24,
             }}
           >
-            <Text
-              style={{
-                color: "#FFFFFF",
-                opacity: 0.65,
-                fontFamily: "Inter_500Medium",
-                fontSize: 11,
-                letterSpacing: 2,
-              }}
-            >
-              READ ALOUD
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  opacity: 0.65,
+                  fontFamily: "Inter_500Medium",
+                  fontSize: 11,
+                  letterSpacing: 2,
+                }}
+              >
+                LISTEN & REPEAT
+              </Text>
+              <RNPressable
+                onPress={() => speakPhrase(current?.text ?? "")}
+                hitSlop={10}
+                style={({ pressed }) => ({
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: speaking
+                    ? "rgba(255,255,255,0.35)"
+                    : "rgba(255,255,255,0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Feather
+                  name={speaking ? "volume-2" : "volume-1"}
+                  size={18}
+                  color="#FFFFFF"
+                />
+              </RNPressable>
+            </View>
             <Text
               style={{
                 color: "#FFFFFF",
@@ -198,6 +260,24 @@ export default function LessonScreen() {
                 Pronounce as: {current.hint}
               </Text>
             ) : null}
+            {speaking && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: 3,
+                      height: 8 + (i % 3) * 6,
+                      borderRadius: 2,
+                      backgroundColor: "rgba(255,255,255,0.7)",
+                    }}
+                  />
+                ))}
+                <Text style={{ color: "rgba(255,255,255,0.7)", fontFamily: "Inter_500Medium", fontSize: 11, marginLeft: 4 }}>
+                  AI speaking…
+                </Text>
+              </View>
+            )}
           </LinearGradient>
 
           <Card style={{ marginTop: 18 }}>
@@ -239,7 +319,7 @@ export default function LessonScreen() {
                     lineHeight: 18,
                   }}
                 >
-                  Speak slowly and clearly. Repeat at least 3 times before moving on.
+                  Listen to the AI pronunciation, then speak the phrase aloud yourself. Tap the speaker icon to replay anytime.
                 </Text>
               </View>
             </View>
@@ -273,7 +353,7 @@ export default function LessonScreen() {
                   color: marked.has(step) ? "#FFFFFF" : colors.foreground,
                 }}
               >
-                {marked.has(step) ? "Repeated" : "I repeated this aloud"}
+                {marked.has(step) ? "Repeated aloud" : "I said it aloud"}
               </Text>
             </RNPressable>
 

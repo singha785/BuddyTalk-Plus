@@ -20,7 +20,7 @@ import { Avatar } from "@/components/Avatar";
 import { Card } from "@/components/Card";
 import { useApp } from "@/context/AppContext";
 import { useSocket, type MatchedPartner } from "@/context/SocketContext";
-import { AI_FEEDBACK, AI_SUGGESTIONS } from "@/data/aiTips";
+import { AI_SUGGESTIONS, generateContextualFeedback } from "@/data/aiTips";
 import { useColors } from "@/hooks/useColors";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { showAlert } from "@/utils/alert";
@@ -195,8 +195,10 @@ export default function PracticeScreen() {
     webrtc.endCall();
     const minutes = Math.max(1, Math.round(seconds / 60));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    const good = AI_FEEDBACK.good[Math.floor(Math.random() * AI_FEEDBACK.good.length)];
-    const improve = AI_FEEDBACK.improve[Math.floor(Math.random() * AI_FEEDBACK.improve.length)];
+    const { good, improve } = generateContextualFeedback({
+      seconds,
+      partnerRegion: partner?.partnerRegion,
+    });
     await recordCall({
       minutes,
       type: "practice",
@@ -284,6 +286,7 @@ export default function PracticeScreen() {
           <EndedView
             seconds={seconds}
             partnerName={partnerName}
+            partnerRegion={partner?.partnerRegion}
             callError={callError}
             onDone={() => router.back()}
             onAgain={handleCallAgain}
@@ -419,9 +422,10 @@ function RoundButton({ icon, onPress, bg, size = 60 }: {
   );
 }
 
-function EndedView({ seconds, partnerName, callError, onDone, onAgain }: {
+function EndedView({ seconds, partnerName, partnerRegion, callError, onDone, onAgain }: {
   seconds: number;
   partnerName: string;
+  partnerRegion?: string;
   callError: string | null;
   onDone: () => void;
   onAgain: () => void;
@@ -429,8 +433,11 @@ function EndedView({ seconds, partnerName, callError, onDone, onAgain }: {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const minutes = Math.max(1, Math.round(seconds / 60));
-  const goodTip = AI_FEEDBACK.good[Math.floor(Math.random() * AI_FEEDBACK.good.length)];
-  const improveTip = AI_FEEDBACK.improve[Math.floor(Math.random() * AI_FEEDBACK.improve.length)];
+  const { good: goodTip, improve: improveTip } = React.useMemo(
+    () => generateContextualFeedback({ seconds, partnerRegion }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const hadCall = seconds > 5;
 
   return (
