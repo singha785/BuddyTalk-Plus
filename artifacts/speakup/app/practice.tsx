@@ -78,16 +78,11 @@ export default function PracticeScreen() {
   }, [ringPulse, stage]);
 
   // ── WebRTC ──────────────────────────────────────────────────────────────────
-  const [micError, setMicError] = useState<string | null>(null);
-
   const webrtc = useWebRTC({
     onCallEnded: useCallback(() => {
       if (stage === "in-call") void endCall();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stage]),
-    onError: useCallback((msg: string) => {
-      setMicError(msg);
-    }, []),
   });
 
   const clearCallTimeout = () => {
@@ -213,6 +208,14 @@ export default function PracticeScreen() {
       partnerRegion: partner?.partnerRegion,
       feedback: { good, improve },
     });
+    // Track partner as greeted — auto-completes task-greet-5 when 5 unique partners
+    if (partner?.partnerId) {
+      await trackGreeting(partner.partnerId);
+    }
+    // Auto-complete "have a 5-minute call" task
+    if (seconds >= 300 && !state.completedTasks.includes("task-real-talk")) {
+      await completeTask("task-real-talk", 14);
+    }
     setStage("ended");
   };
 
@@ -369,6 +372,17 @@ export default function PracticeScreen() {
                     <Text style={{ color: "#FF7A45", fontFamily: "Inter_700Bold", fontSize: 13, letterSpacing: 0.5 }}>VOICE CALLING</Text>
                     <Text style={{ color: "#FFFFFF", opacity: 0.85, fontFamily: "Inter_500Medium", fontSize: 14, marginTop: 6, lineHeight: 20 }}>
                       Voice calls work on web and native device builds. You are matched with {partnerName} — start talking!
+                    </Text>
+                  </View>
+                ) : null}
+                {webrtc.micError ? (
+                  <View style={{ backgroundColor: "rgba(229,72,77,0.22)", borderRadius: 18, padding: 16 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <Feather name="mic-off" size={14} color="#E5484D" />
+                      <Text style={{ color: "#E5484D", fontFamily: "Inter_700Bold", fontSize: 13, letterSpacing: 0.5 }}>MICROPHONE ISSUE</Text>
+                    </View>
+                    <Text style={{ color: "#FFFFFF", opacity: 0.85, fontFamily: "Inter_500Medium", fontSize: 13, lineHeight: 19 }}>
+                      {webrtc.micError}
                     </Text>
                   </View>
                 ) : null}
