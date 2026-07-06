@@ -1,0 +1,147 @@
+Complete Infrastructure Migration & Production Readiness 
+I want to completely remove my application from Replit-specific infrastructure and make it fully independent, production-ready, exportable, and deployable using only free or standard services.
+This is a complete migration task. Please perform all required changes automatically. Do not only provide documentation or suggestions.
+Objectives
+My goal is to run this application without requiring any Replit subscription, Replit Deployment, Replit Database, or any other Replit-specific services.
+The final project must be fully portable, self-hosted, and ready for APK testing and future Google Play Store release.
+
+1. Remove All Replit Dependencies
+Remove every dependency on Replit Deployment.
+Remove every dependency on Replit Database.
+Remove Replit Authentication if used.
+Remove Replit environment variables.
+Remove Replit-only packages and APIs.
+Replace all Replit-specific configurations with standard alternatives.
+
+2. Database Migration
+Migrate the entire database to Supabase (Preferred).
+If Supabase is not technically suitable, then use Firebase.
+The migration must include:
+Database schema
+Tables
+Relationships
+Indexes
+Queries
+ORM configuration
+Authentication integration (if required)
+Environment variables
+Connection pooling (if applicable)
+No Replit database dependency should remain.
+
+3. Backend Migration
+Make the backend fully compatible with free hosting providers such as:
+Render
+Railway
+Cloudflare Workers (if appropriate)
+Automatically configure:
+Dockerfile
+render.yaml
+railway.json (if useful)
+Startup commands
+Build commands
+Environment variables
+Health check endpoint
+Production configuration
+The backend should be deployable without additional manual coding.
+
+4. Frontend Changes
+Update the frontend so it no longer references Replit URLs or services.
+Replace all API endpoints with configurable environment variables.
+Ensure frontend works correctly with the migrated backend.
+
+5. Environment Configuration
+Create complete environment files:
+.env.example
+Production environment template
+Development environment template
+Document every required environment variable.
+
+6. Project Portability
+Make the project completely export-friendly.
+Anyone should be able to:
+Download the project
+Install dependencies
+Configure environment variables
+Run locally
+Deploy to production
+without needing Replit.
+
+7. Local Development
+Configure local development with:
+Docker Compose
+PostgreSQL/Supabase compatibility
+One-command startup
+Automatic database migrations
+The project should run locally with minimal setup.
+
+8. APK & Mobile Readiness
+Prepare the project for Android APK generation.
+Ensure:
+API endpoints are configurable.
+Production backend works correctly.
+Authentication works.
+File uploads (if any) work.
+Push notifications (if any) work.
+No Replit services are required.
+The project should be ready for APK testing.
+
+9. Production Readiness
+Verify that all application features continue working after migration.
+This includes:
+Login
+Registration
+User profiles
+Dashboard
+Notes
+Mock tests
+Previous year papers
+Quiz
+Premium features
+Subscription logic
+Admin panel
+Analytics
+Notifications
+Database operations
+APIs
+File storage
+No existing functionality should break.
+
+10. Performance
+Optimize:
+API performance
+Database queries
+Image loading
+Bundle size
+Caching
+Error handling
+Logging
+
+11. Security
+Implement production-level security:
+Secure environment variables
+Input validation
+SQL injection protection
+Authentication security
+Rate limiting (if appropriate)
+Secure API configuration
+
+12. Final Verification
+After completing the migration:
+Fix every compatibility issue automatically.
+Remove unused code.
+Remove obsolete configurations.
+Ensure the application builds successfully.
+Ensure the application runs successfully.
+Ensure the backend deploys successfully.
+Ensure the frontend connects successfully.
+Ensure the database works correctly.
+
+Final Deliverable
+Provide a fully migrated, production-ready Exam Setu project that:
+Requires no paid Replit services.
+Uses Supabase (preferred) or Firebase.
+Is deployable on free hosting.
+Is fully exportable.
+Is ready for APK testing.
+Can later be published to Google Play Store without infrastructure changes.
+If additional modifications are required to achieve these goals, implement them automatically instead of only describing them.
