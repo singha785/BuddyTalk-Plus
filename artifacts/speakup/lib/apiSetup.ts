@@ -13,8 +13,8 @@ let configured = false;
  *
  * - On web: served from the same proxy host, so `/api` works as-is.
  * - On native (Android/iOS APK): must point at the deployed backend.
- *   Set EXPO_PUBLIC_DOMAIN to your deployed Replit domain, e.g.
- *   `your-api.replit.app` (without https:// or trailing slash).
+ *   Set EXPO_PUBLIC_DOMAIN to your deployed API server domain, e.g.
+ *   `your-api.example.com` (without https:// or trailing slash).
  *   This value is baked into the APK at EAS build time.
  */
 export function configureApiClient(): void {
