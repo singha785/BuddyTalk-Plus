@@ -138,29 +138,41 @@ pnpm --filter @workspace/speakup run dev:local
 
 ## 5 — Production Deployment
 
-### API Server → Render (free tier)
+### API Server → Render (free tier) — one-click via Blueprint
+
+A `render.yaml` is included at the repo root for one-click deployment:
 
 1. Push your repo to GitHub.
-2. Create a new **Web Service** on [render.com](https://render.com).
-3. Connect your GitHub repo.
-4. Configure the service:
+2. Go to [render.com](https://render.com) → **New → Blueprint**.
+3. Connect your GitHub repo — Render detects `render.yaml` automatically.
+4. Render creates:
+   - A **Web Service** (`buddytalk-api`) built from the `Dockerfile` at the repo root
+   - A **PostgreSQL database** (`buddytalk-db`) on the free tier, wired up automatically
+5. After the first deploy succeeds, copy the public URL (e.g. `buddytalk-api.onrender.com`).
+6. Run the DB migration once from your local machine:
+   ```bash
+   DATABASE_URL="<render-postgres-url>" pnpm --filter @workspace/db run push
+   ```
+7. Set `ALLOWED_ORIGINS` in Render's environment to your app domain (leave blank for APK-only).
+
+**Manual setup (no Blueprint):**
 
    | Field | Value |
    |-------|-------|
-   | **Runtime** | Node |
-   | **Build Command** | `pnpm install && pnpm --filter @workspace/api-server run build` |
-   | **Start Command** | `node --enable-source-maps artifacts/api-server/dist/index.mjs` |
+   | **Runtime** | Docker |
+   | **Dockerfile Path** | `./Dockerfile` |
+   | **Docker Context** | `.` (repo root) |
 
-5. Add environment variables in the Render dashboard:
+   Environment variables:
 
    | Variable | Value |
    |----------|-------|
-   | `DATABASE_URL` | Your Supabase/Neon connection string |
+   | `DATABASE_URL` | Your Supabase/Neon/Render Postgres connection string |
    | `NODE_ENV` | `production` |
-   | `PORT` | `10000` (Render's default; set automatically) |
+   | `PORT` | `8080` |
    | `ALLOWED_ORIGINS` | `https://your-app-domain.com` |
 
-6. After first deploy, note your Render service URL (e.g. `your-api.onrender.com`).
+8. After first deploy, note your Render service URL (e.g. `buddytalk-api.onrender.com`).
 
 ### API Server → Railway (free trial)
 
@@ -172,14 +184,15 @@ pnpm --filter @workspace/speakup run dev:local
 
 ### API Server → Docker (any VPS / self-hosted)
 
-A `Dockerfile` is included at `artifacts/api-server/Dockerfile`.
+A `Dockerfile` is included at the repo root.
 
 ```bash
 # Build from repo root
-docker build -f artifacts/api-server/Dockerfile -t buddytalk-api .
+docker build -t buddytalk-api .
 
 # Run
 docker run -p 8080:8080 \
+  -e PORT=8080 \
   -e DATABASE_URL="postgresql://..." \
   -e NODE_ENV=production \
   -e ALLOWED_ORIGINS="https://your-app.com" \

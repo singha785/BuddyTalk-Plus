@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: buddytalk-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: buddytalk-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: buddytalk-db
+    plan: free
+    databaseName: buddytalk
+    user: buddytalk
