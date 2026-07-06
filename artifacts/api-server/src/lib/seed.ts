@@ -6,17 +6,17 @@ import { hashPassword } from "./auth";
 
 const SEED_MENTORS = [
   {
-    email: "aisha.khan@buddytalk.demo",
-    name: "Aisha Khan",
-    region: "Karachi, Pakistan",
+    email: "anjali.perera@buddytalk.demo",
+    name: "Anjali Perera",
+    region: "Colombo, Sri Lanka",
     level: "Advanced" as const,
-    initials: "AK",
+    initials: "AP",
     mentorLevel: "Pro Mentor" as const,
     rating: 4.9,
     sessions: 1240,
     bio: "Patient mentor specialising in interview English and confidence building.",
     pricePer10Min: 30,
-    languages: ["Urdu", "Hindi", "English"],
+    languages: ["Sinhala", "Tamil", "English"],
     specialties: ["Interview", "Confidence", "Pronunciation"],
     accentColor: "#5B3DFF",
   },

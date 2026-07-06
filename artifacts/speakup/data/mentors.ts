@@ -16,14 +16,14 @@ export type Mentor = {
 
 export const MENTORS: Mentor[] = [
   {
-    id: "mentor-aisha",
-    name: "Aisha Khan",
-    initials: "AK",
+    id: "mentor-anjali",
+    name: "Anjali Perera",
+    initials: "AP",
     level: "Pro Mentor",
     rating: 4.9,
     sessions: 1240,
-    region: "Karachi, Pakistan",
-    languages: ["Urdu", "Hindi", "English"],
+    region: "Colombo, Sri Lanka",
+    languages: ["Sinhala", "Tamil", "English"],
     bio: "Patient mentor specialising in interview English and confidence building.",
     pricePer10Min: 30,
     online: true,

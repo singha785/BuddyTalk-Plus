@@ -57,7 +57,7 @@ export const LESSONS: Lesson[] = [
     items: [
       { text: "Hi, my name is Aman." },
       { text: "I am twenty-two years old." },
-      { text: "I live in Lahore with my family." },
+      { text: "I live in Pune with my family." },
       { text: "I am learning English to get a better job." },
       { text: "I love cricket and music." },
     ],

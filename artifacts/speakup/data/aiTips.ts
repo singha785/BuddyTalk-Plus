@@ -75,9 +75,9 @@ const LONG_IMPROVE = [
 
 const REGION_TIPS: Record<string, string> = {
   India: "Focus on the \"v\" vs \"w\" distinction — \"vine\" and \"wine\" sound different in native speech.",
-  Pakistan: "Great effort! Work on elongating vowel sounds — \"cat\" vs \"cut\" difference matters a lot.",
   Bangladesh: "Practice the \"r\" sound at the end of words like \"water\" and \"better\".",
   "Sri Lanka": "Your rhythm was good. Try to stress the right syllable: \"pho-TO-graph\" not \"PHO-to-graph\".",
+  Nepal: "Great effort! Work on elongating vowel sounds — \"cat\" vs \"cut\" difference matters a lot.",
 };
 
 function pick<T>(arr: T[]): T {
