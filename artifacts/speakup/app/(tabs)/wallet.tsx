@@ -61,22 +61,11 @@ export default function WalletTab() {
     }
   };
 
-  const handleBuyPack = (pack: (typeof COIN_PACKS)[number]) => {
+  const handleBuyPack = (_pack: (typeof COIN_PACKS)[number]) => {
     showAlert(
-      "Buy coins",
-      `Get ${pack.coins} coins for ${pack.price}? In-app purchases activate after publishing.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Add (demo)",
-          onPress: async () => {
-            await addCoins(pack.coins);
-            Haptics.notificationAsync(
-              Haptics.NotificationFeedbackType.Success,
-            ).catch(() => undefined);
-          },
-        },
-      ],
+      "Coming soon",
+      "Coin purchases will be available when the app launches. Earn free coins by watching ads or completing daily tasks!",
+      [{ text: "Got it" }],
     );
   };
 
@@ -397,7 +386,7 @@ export default function WalletTab() {
                     marginTop: 4,
                   }}
                 >
-                  Tap to purchase
+                  Coming soon
                 </Text>
               </Card>
             </Pressable>

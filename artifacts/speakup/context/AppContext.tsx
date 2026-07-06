@@ -70,9 +70,12 @@ export type AppState = {
 
 const FREE_DAILY_MINUTES = 20;
 const DAILY_AD_LIMIT = 10;
-const COIN_AD_REWARD = 5;
+const COIN_AD_REWARD = 15;
+const DAILY_LOGIN_BONUS = 100;
 
-const STORAGE_KEY = "speakup.state.v1";
+// Each user account gets its own isolated storage slot.
+// v2 because v1 used a global key — all v1 data is abandoned on next login.
+const userStorageKey = (id: string) => `speakup.state.v2.${id}`;
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
@@ -84,7 +87,7 @@ const defaultState: AppState = {
     region: "South Asia",
     onboarded: false,
   },
-  coins: 30,
+  coins: 0,
   premium: false,
   streak: 0,
   lastOpened: null,
@@ -146,7 +149,14 @@ function rollDailyResets(state: AppState): AppState {
   const today = todayKey();
   let next = state;
   if (state.freeMinutesDate !== today) {
-    next = { ...next, freeMinutesUsed: 0, freeMinutesDate: today };
+    // New day: reset free minutes, daily tasks, and greeted-partner tracking
+    next = {
+      ...next,
+      freeMinutesUsed: 0,
+      freeMinutesDate: today,
+      completedTasks: [],
+      greetedPartners: [],
+    };
   }
   if (state.adsWatchedDate !== today) {
     next = { ...next, adsWatchedToday: 0, adsWatchedDate: today };
@@ -159,28 +169,65 @@ function bumpStreak(state: AppState): AppState {
   if (state.lastOpened === today) return state;
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const streak = state.lastOpened === yesterday ? state.streak + 1 : 1;
-  return { ...state, lastOpened: today, streak };
+  // Award daily login bonus every new day
+  return { ...state, lastOpened: today, streak, coins: state.coins + DAILY_LOGIN_BONUS };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { user: authUser, updateProfile: serverUpdateProfile } = useAuth();
+  const { user: authUser, ready: authReady, updateProfile: serverUpdateProfile } = useAuth();
   const [state, setState] = useState<AppState>(defaultState);
   const [ready, setReady] = useState<boolean>(false);
 
+  // ── Load per-user state whenever auth resolves or the logged-in account changes ──
   useEffect(() => {
+    if (!authReady) return;
+
+    setReady(false);
+    const userId = authUser?.id;
+
+    if (!userId) {
+      // Logged out — show clean default, no storage write
+      setState(defaultState);
+      setReady(true);
+      return;
+    }
+
+    const key = userStorageKey(userId);
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        const raw = await AsyncStorage.getItem(key);
         if (raw) {
-          const parsed = JSON.parse(raw) as AppState;
-          const merged = { ...defaultState, ...parsed };
+          const parsed = JSON.parse(raw) as Partial<AppState>;
+          const merged: AppState = {
+            ...defaultState,
+            ...parsed,
+            // Always overlay the latest profile data from the server
+            profile: {
+              ...defaultState.profile,
+              ...(parsed.profile ?? {}),
+              name: authUser.name ?? parsed.profile?.name ?? "",
+              goal: (authUser.goal ?? parsed.profile?.goal ?? null) as UserGoal | null,
+              level: (authUser.level ?? parsed.profile?.level ?? null) as UserLevel | null,
+              onboarded: !!authUser.onboarded,
+            },
+          };
           const rolled = bumpStreak(rollDailyResets(merged));
           setState(rolled);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(rolled));
+          await AsyncStorage.setItem(key, JSON.stringify(rolled));
         } else {
-          const initial = bumpStreak(defaultState);
+          // First open for this account — start fresh with their server profile
+          const initial = bumpStreak({
+            ...defaultState,
+            profile: {
+              name: authUser.name ?? "",
+              goal: (authUser.goal ?? null) as UserGoal | null,
+              level: (authUser.level ?? null) as UserLevel | null,
+              region: "South Asia",
+              onboarded: !!authUser.onboarded,
+            },
+          });
           setState(initial);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+          await AsyncStorage.setItem(key, JSON.stringify(initial));
         }
       } catch {
         setState(defaultState);
@@ -188,35 +235,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    if (!authUser) return;
-    setState((prev) => {
-      const next: AppState = {
-        ...prev,
-        profile: {
-          ...prev.profile,
-          name: authUser.name ?? prev.profile.name,
-          goal: (authUser.goal ?? prev.profile.goal) as UserGoal | null,
-          level: (authUser.level ?? prev.profile.level) as UserLevel | null,
-          region: authUser.region ?? prev.profile.region,
-          onboarded: !!authUser.onboarded,
-        },
-      };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
-      return next;
-    });
-  }, [authUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, authUser?.id]);
 
   const persist = useCallback(async (next: AppState) => {
     setState(next);
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      await AsyncStorage.setItem(userStorageKey(userId), JSON.stringify(next));
     } catch {
       // ignore
     }
-  }, []);
+  }, [authUser?.id]);
 
   const completeOnboarding = useCallback<AppContextValue["completeOnboarding"]>(
     async ({ name, goal, level }) => {
@@ -235,9 +266,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addCoins = useCallback<AppContextValue["addCoins"]>(
-    async (amount) => {
-      await persist({ ...state, coins: state.coins + amount });
-    },
+    async (amount) => { await persist({ ...state, coins: state.coins + amount }); },
     [state, persist],
   );
 
@@ -296,26 +325,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         callHistory: [newEntry, ...rolled.callHistory].slice(0, 50),
       });
       return newEntry;
-    },
-    [state, persist],
-  );
-
-  const trackGreeting = useCallback(
-    async (partnerId: string) => {
-      if (!partnerId || state.greetedPartners.includes(partnerId)) return;
-      const greetedPartners = [...state.greetedPartners, partnerId];
-      const GREET_TASK_ID = "task-greet-5";
-      const GREET_TASK_REWARD = 8;
-      const alreadyComplete = state.completedTasks.includes(GREET_TASK_ID);
-      const nowComplete = !alreadyComplete && greetedPartners.length >= 5;
-      await persist({
-        ...state,
-        greetedPartners,
-        completedTasks: nowComplete
-          ? [...state.completedTasks, GREET_TASK_ID]
-          : state.completedTasks,
-        coins: nowComplete ? state.coins + GREET_TASK_REWARD : state.coins,
-      });
     },
     [state, persist],
   );
@@ -391,16 +400,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, persist],
   );
 
+  const trackGreeting = useCallback(
+    async (partnerId: string) => {
+      if (!partnerId || state.greetedPartners.includes(partnerId)) return;
+      const greetedPartners = [...state.greetedPartners, partnerId];
+      const GREET_TASK_ID = "task-greet-5";
+      const GREET_TASK_REWARD = 8;
+      const alreadyComplete = state.completedTasks.includes(GREET_TASK_ID);
+      const nowComplete = !alreadyComplete && greetedPartners.length >= 5;
+      await persist({
+        ...state,
+        greetedPartners,
+        completedTasks: nowComplete
+          ? [...state.completedTasks, GREET_TASK_ID]
+          : state.completedTasks,
+        coins: nowComplete ? state.coins + GREET_TASK_REWARD : state.coins,
+      });
+    },
+    [state, persist],
+  );
+
   const setPremium = useCallback<AppContextValue["setPremium"]>(
     async (value) => { await persist({ ...state, premium: value }); },
     [state, persist],
   );
 
   const resetAccount = useCallback<AppContextValue["resetAccount"]>(async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    const userId = authUser?.id;
+    if (userId) {
+      await AsyncStorage.removeItem(userStorageKey(userId)).catch(() => {});
+    }
     const fresh = bumpStreak(defaultState);
     await persist(fresh);
-  }, [persist]);
+  }, [persist, authUser?.id]);
 
   const value = useMemo<AppContextValue>(() => {
     const totalAllowed = state.premium ? FREE_DAILY_MINUTES + 20 : FREE_DAILY_MINUTES;
@@ -446,4 +478,5 @@ export const CONSTANTS = {
   FREE_DAILY_MINUTES,
   DAILY_AD_LIMIT,
   COIN_AD_REWARD,
+  DAILY_LOGIN_BONUS,
 };

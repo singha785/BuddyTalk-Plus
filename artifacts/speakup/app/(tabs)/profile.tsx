@@ -67,7 +67,7 @@ export default function ProfileTab() {
               marginTop: 4,
             }}
           >
-            {state.profile.region}
+            {authUser?.email ?? state.profile.region}
           </Text>
           <View
             style={{
