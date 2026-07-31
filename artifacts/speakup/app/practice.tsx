@@ -53,6 +53,11 @@ export default function PracticeScreen() {
   const pulse = useRef(new Animated.Value(0)).current;
   const ringPulse = useRef(new Animated.Value(0)).current;
 
+  // Keep a ref to the latest stage so callbacks defined once always see the
+  // current value without stale closure issues (Fix for Bug 2).
+  const stageRef = useRef<Stage>(stage);
+  useEffect(() => { stageRef.current = stage; }, [stage]);
+
   // ── Pulse animations ────────────────────────────────────────────────────────
   useEffect(() => {
     const loop = Animated.loop(
@@ -77,12 +82,17 @@ export default function PracticeScreen() {
     return () => loop.stop();
   }, [ringPulse, stage]);
 
+  // Keep a ref to endCall so onCallEnded can always invoke the latest version.
+  const endCallRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
   // ── WebRTC ──────────────────────────────────────────────────────────────────
+  // onCallEnded uses endCallRef so it is stable (no deps) and always calls the
+  // current endCall — fixes the case where the remote side hangs up and the
+  // local screen stays frozen because a stale closure had the wrong stage.
   const webrtc = useWebRTC({
     onCallEnded: useCallback(() => {
-      if (stage === "in-call") void endCall();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stage]),
+      void endCallRef.current?.();
+    }, []),
   });
 
   const clearCallTimeout = () => {
@@ -191,7 +201,9 @@ export default function PracticeScreen() {
   }, [stage]);
 
   const endCall = async () => {
-    if (stage === "ended") return;
+    // Use stageRef so this function always reads the current stage even when
+    // called from a closure that was created in a previous render.
+    if (stageRef.current === "ended") return;
     webrtc.endCall();
     const minutes = Math.max(1, Math.round(seconds / 60));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
@@ -218,6 +230,9 @@ export default function PracticeScreen() {
     }
     setStage("ended");
   };
+
+  // Keep endCallRef in sync so the WebRTC onCallEnded callback is never stale.
+  endCallRef.current = endCall;
 
   const handleHangup = () => {
     if (stage === "searching" || stage === "ringing") {

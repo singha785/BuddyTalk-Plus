@@ -1,0 +1,20 @@
+My Expo app (artifacts/speakup) has a voice calling feature between two native Android users. Calls connect successfully (matching + WebRTC signaling both work), but no audio is transferred between the two users. Please implement the following permanent fixes in the source code:
+
+PROBLEM 1: Native WebRTC was never actually implemented — the code only worked on web.
+In hooks/useWebRTC.ts, the "isSupported" check and the RTCPeerConnection/RTCSessionDescription/RTCIceCandidate/mediaDevices calls only reference browser globals (window.RTCPeerConnection, navigator.mediaDevices), which don't exist on native Android/iOS. This causes startCall() to silently return early on native, so no real audio connection is ever created — only the signaling (matching) happens through Socket.IO.
+
+FIX:
+- Add dependencies: "react-native-webrtc" (version 124.0.6, compatible with Expo SDK 54) and "@config-plugins/react-native-webrtc" (version 13.0.0, also for Expo SDK 54 — check package.json for the actual Expo SDK version and use the matching compatible versions).
+- Add the "@config-plugins/react-native-webrtc" plugin to app.json's plugins array, with cameraPermission and microphonePermission strings.
+- Create lib/webrtc.native.ts that re-exports RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, MediaStream, and mediaDevices from "react-native-webrtc".
+- Create lib/webrtc.web.ts that re-exports the same names from the browser's window/navigator globals, so Metro's platform-specific file resolution picks the right one automatically.
+- Update hooks/useWebRTC.ts to import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, and mediaDevices from "@/lib/webrtc" instead of referencing browser globals directly, and fix "isSupported" so it's true on native (not just on web).
+
+PROBLEM 2: Even with a working native WebRTC connection, Android routes call audio to the earpiece speaker by default, not the main loudspeaker — this is a well-known react-native-webrtc limitation on Android, not a bug in the app's signaling logic.
+
+FIX:
+- Add dependency "react-native-incall-manager".
+- In hooks/useWebRTC.ts, when a call starts (inside startCall, after the peer connection is created, native only — Platform.OS !== "web"), call InCallManager.start({ media: "audio" }) and InCallManager.setForceSpeakerphoneOn(true).
+- When a call ends or cleans up (native only), call InCallManager.stop().
+
+After implementing both fixes, double check app.json is still valid JSON (no missing commas), and confirm the exact final package.json version numbers used for react-native-webrtc and @config-plugins/react-native-webrtc so I can verify they still match my Expo SDK version.

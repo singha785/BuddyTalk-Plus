@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useSocket, type MatchedPartner } from "@/context/SocketContext";
+import { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, mediaDevices } from "@/lib/webrtc";
+
+// InCallManager is native-only — dynamic import avoids web crashes
+let InCallManager: {
+  start: (opts: { media: string }) => void;
+  stop: () => void;
+  setForceSpeakerphoneOn: (on: boolean) => void;
+} | null = null;
+
+if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  InCallManager = require("react-native-incall-manager").default;
+}
 
 const STUN_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -33,15 +46,24 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
   const localStreamRef = useRef<MediaStream | null>(null);
   const partnerSocketIdRef = useRef<string | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
-  // Buffer signals that arrive before the RTCPeerConnection is ready
+  // Buffer signals that arrive before the RTCPeerConnection is ready OR
+  // before remoteDescription has been set (ICE candidates need both)
   const pendingSignalsRef = useRef<PendingSignal[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
 
+  // --- FIX Bug 2: always call the latest callbacks, even if the socket
+  //     listener effect only runs once (with [socket] as dependency).
+  const callbacksRef = useRef(callbacks);
+  useEffect(() => { callbacksRef.current = callbacks; }, [callbacks]);
+
+  // WebRTC is supported on web when browser globals exist, and always on
+  // native now that react-native-webrtc is installed.
   const isSupported =
-    Platform.OS === "web" &&
-    typeof window !== "undefined" &&
-    typeof window.RTCPeerConnection !== "undefined" &&
-    typeof navigator?.mediaDevices?.getUserMedia === "function";
+    Platform.OS !== "web"
+      ? true
+      : typeof window !== "undefined" &&
+        typeof window.RTCPeerConnection !== "undefined" &&
+        typeof navigator?.mediaDevices?.getUserMedia === "function";
 
   const cleanup = useCallback(() => {
     pcRef.current?.close();
@@ -54,6 +76,10 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
       remoteAudioRef.current.srcObject = null;
       remoteAudioRef.current.remove();
       remoteAudioRef.current = null;
+    }
+    // Stop in-call audio routing on native
+    if (Platform.OS !== "web") {
+      InCallManager?.stop();
     }
   }, []);
 
@@ -72,11 +98,26 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     remoteAudioRef.current.play().catch(() => {});
   }, []);
 
-  // ── Process a received offer: set remote description + send answer ──────────
+  // ── Process a received offer: set remote description, flush pending ICE,
+  //    then create + send answer. ───────────────────────────────────────────
   const processOffer = useCallback(
     async (pc: RTCPeerConnection, from: string, sdp: RTCSessionDescriptionInit) => {
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+
+        // --- FIX Bug 1: flush ICE candidates that arrived while
+        //     remoteDescription was not yet set. Only flush ICE type signals;
+        //     leave any buffered offers in the queue.
+        const iceToApply = pendingSignalsRef.current.filter((s) => s.type === "ice");
+        pendingSignalsRef.current = pendingSignalsRef.current.filter((s) => s.type !== "ice");
+        for (const sig of iceToApply) {
+          if (sig.type === "ice") {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(sig.candidate));
+            } catch { /* stale */ }
+          }
+        }
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.sendAnswer(from, answer);
@@ -87,7 +128,7 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     [socket],
   );
 
-  // ── Drain any signals that arrived before the PC was initialized ────────────
+  // ── Drain any signals that arrived before the PC was initialized ────────
   const drainPendingSignals = useCallback(
     async (pc: RTCPeerConnection) => {
       const signals = pendingSignalsRef.current.splice(0);
@@ -104,12 +145,11 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     [processOffer],
   );
 
-  // ── Socket signal listeners — registered once on mount ──────────────────────
+  // ── Socket signal listeners — registered once on mount ──────────────────
   useEffect(() => {
     const offOffer = socket.onOffer(async ({ from, sdp }) => {
       const pc = pcRef.current;
       if (!pc) {
-        // PC not ready yet — buffer the offer and drain once startCall completes
         pendingSignalsRef.current.push({ type: "offer", from, sdp });
         return;
       }
@@ -121,13 +161,22 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
       if (!pc) return;
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        // Flush ICE candidates that were queued before the answer was applied
+        const iceToApply = pendingSignalsRef.current.filter((s) => s.type === "ice");
+        pendingSignalsRef.current = pendingSignalsRef.current.filter((s) => s.type !== "ice");
+        for (const sig of iceToApply) {
+          if (sig.type === "ice") {
+            try { await pc.addIceCandidate(new RTCIceCandidate(sig.candidate)); } catch { /* stale */ }
+          }
+        }
       } catch { /* stale */ }
     });
 
+    // --- FIX Bug 1: also queue ICE candidates when remoteDescription is not
+    //     yet set (not just when pc doesn't exist yet).
     const offIce = socket.onIceCandidate(async ({ candidate }) => {
       const pc = pcRef.current;
-      if (!pc) {
-        // Buffer ICE candidates so they're applied after PC is ready
+      if (!pc || !pc.remoteDescription) {
         pendingSignalsRef.current.push({ type: "ice", from: "", candidate });
         return;
       }
@@ -136,9 +185,11 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
       } catch { /* stale */ }
     });
 
+    // --- FIX Bug 2: use callbacksRef so this handler always calls the
+    //     latest onCallEnded, even though this effect only runs once.
     const offEnded = socket.onCallEnded(() => {
       cleanup();
-      callbacks.onCallEnded?.();
+      callbacksRef.current.onCallEnded?.();
     });
 
     return () => { offOffer(); offAnswer(); offIce(); offEnded(); };
@@ -152,10 +203,10 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
       setMicError(null);
       partnerSocketIdRef.current = partner.partnerSocketId;
 
-      // ── Acquire microphone — never silently fall back ─────────────────────
+      // ── Acquire microphone ─────────────────────────────────────────────
       let stream: MediaStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        stream = await mediaDevices.getUserMedia({ audio: true, video: false });
       } catch (err) {
         const isPermissionDenied =
           err instanceof Error &&
@@ -163,28 +214,32 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
             err.name === "PermissionDeniedError" ||
             err.message.toLowerCase().includes("denied"));
         const msg = isPermissionDenied
-          ? "Microphone access was denied. Tap the browser's address bar and allow microphone access, then try again."
+          ? "Microphone access was denied. Please allow microphone permission and try again."
           : "Could not start your microphone. Check that it is not used by another app and try again.";
         setMicError(msg);
-        callbacks.onError?.(msg);
-        // Still proceed so the matched user sees us as "in call" — just no audio from our side
+        callbacksRef.current.onError?.(msg);
         stream = new MediaStream();
       }
 
       localStreamRef.current = stream;
 
-      // ── Create peer connection ─────────────────────────────────────────────
+      // ── Start in-call audio routing on native (must happen before PC) ──
+      if (Platform.OS !== "web") {
+        InCallManager?.start({ media: "audio" });
+        InCallManager?.setForceSpeakerphoneOn(true);
+      }
+
+      // ── Create peer connection ─────────────────────────────────────────
       const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
       pcRef.current = pc;
 
-      // Add all audio tracks (may be empty if mic was denied)
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       pc.ontrack = (event) => {
         const remoteStream = event.streams[0];
         if (remoteStream) {
           playRemoteStream(remoteStream);
-          callbacks.onRemoteStream?.(remoteStream);
+          callbacksRef.current.onRemoteStream?.(remoteStream);
         }
       };
 
@@ -194,19 +249,20 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
         }
       };
 
+      // --- FIX Bug 2: use callbacksRef so stale closure never suppresses
+      //     the call-ended notification on the non-hanging-up side.
       pc.onconnectionstatechange = () => {
         const state = pc.connectionState;
         if (state === "disconnected" || state === "failed" || state === "closed") {
           cleanup();
-          callbacks.onCallEnded?.();
+          callbacksRef.current.onCallEnded?.();
         }
       };
 
-      // ── Drain signals buffered before PC was ready ────────────────────────
-      // (Happens when offer arrives during our getUserMedia call)
+      // ── Drain signals buffered before PC was ready ────────────────────
       await drainPendingSignals(pc);
 
-      // ── Initiator creates and sends the offer ─────────────────────────────
+      // ── Initiator creates and sends the offer ─────────────────────────
       if (partner.isInitiator) {
         try {
           const offer = await pc.createOffer({ offerToReceiveAudio: true });
@@ -217,7 +273,7 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
         }
       }
     },
-    [isSupported, cleanup, socket, callbacks, playRemoteStream, drainPendingSignals],
+    [isSupported, cleanup, socket, playRemoteStream, drainPendingSignals],
   );
 
   const endCall = useCallback(() => {

@@ -45,7 +45,14 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Allow BuddyTalk+ to access your camera for video calls.",
+          "microphonePermission": "Allow BuddyTalk+ to access your microphone to speak with practice partners and mentors."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

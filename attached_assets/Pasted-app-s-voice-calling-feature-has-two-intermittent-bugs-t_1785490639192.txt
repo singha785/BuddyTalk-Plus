@@ -1,0 +1,15 @@
+app's voice calling feature has two intermittent bugs to fix in hooks/useWebRTC.ts and possibly the call screen component:
+
+BUG 1: Audio sometimes never connects at all (not a delay — it just silently fails on some calls, works fine on others). Root cause: incoming ICE candidates are only queued (buffered) when the RTCPeerConnection object doesn't exist yet, but they are NOT queued when the connection exists but its remoteDescription hasn't been set yet (i.e., the offer/answer hasn't been processed yet). If an ICE candidate arrives in that window, it gets silently dropped, and the connection never completes.
+
+FIX:
+- In the ICE candidate socket handler (onIceCandidate), change the condition that decides whether to queue a candidate vs. apply it immediately: queue it whenever the peer connection doesn't exist yet OR its remoteDescription is not yet set (not just when the connection doesn't exist).
+- In processOffer (the function that sets the remote description from an incoming offer and creates an answer), immediately after setRemoteDescription succeeds, flush any ICE candidates that were queued while waiting, applying them with addIceCandidate before creating the answer.
+
+BUG 2: When one user ends/hangs up a call, the other user's app does not detect that the call ended — their screen still shows as if the call is ongoing, instead of automatically returning to a non-call state.
+
+FIX:
+- Find the call screen component that uses the useWebRTC hook (search for files using "useWebRTC" or "onCallEnded").
+- Verify that the onCallEnded callback passed into useWebRTC actually updates that screen's UI state (e.g., navigates away from the call screen, resets call-related state) — not just internal cleanup. If the callback is missing this UI update, or the call screen isn't re-rendering off of this callback's effect, fix it so that receiving a call_ended signal (whether from the other user explicitly hanging up, or from the connection failing/disconnecting) always resets the call screen for the user who did NOT hang up.
+
+After both fixes, double-check hooks/useWebRTC.ts still compiles without syntax errors (matching braces/parens), and test that: (a) starting a call and immediately answering doesn't lose ICE candidates, and (b) hanging up on one device correctly ends the call screen on the other device too.
