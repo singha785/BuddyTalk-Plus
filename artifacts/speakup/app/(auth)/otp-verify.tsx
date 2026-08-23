@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -63,6 +64,24 @@ export default function OTPVerify() {
   // 6-box OTP input refs
   const inputRefs = useRef<(TextInput | null)[]>(Array(OTP_LENGTH).fill(null));
 
+  const fillFromClipboard = async () => {
+    const text = await Clipboard.getStringAsync();
+    const code = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (code.length === OTP_LENGTH) {
+      setOtp(code);
+      setError(null);
+      inputRefs.current[OTP_LENGTH - 1]?.focus();
+    }
+  };
+
+  // Android fallback for SMS apps that copy the code but do not support
+  // true SMS auto-read. Poll only while this screen is visible and incomplete.
+  useEffect(() => {
+    if (Platform.OS !== "android" || otp.length === OTP_LENGTH) return;
+    const id = setInterval(() => { void fillFromClipboard(); }, 1200);
+    return () => clearInterval(id);
+  }, [otp.length]);
+
   const handleOTPChange = (text: string, idx: number) => {
     const cleaned = text.replace(/\D/g, "");
     // Handle paste of full code
@@ -125,7 +144,7 @@ export default function OTPVerify() {
     if (cooldown > 0) return;
     try {
       const result = await sendPhoneOTP(phone, purpose);
-      setDevOtp(result.devOtp);
+      setDevOtp(result.fallbackCode ?? result.devOtp);
       setOtp("");
       setError(null);
       startCooldown();
@@ -175,12 +194,12 @@ export default function OTPVerify() {
 
           <View style={{ backgroundColor: "#FFFFFF", borderRadius: 22, padding: 22, marginTop: 32, gap: 20, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
 
-            {/* Dev mode OTP hint */}
+            {/* Provider-free in-app verification */}
             {devOtp && (
               <View style={{ backgroundColor: "#FFF1D6", borderRadius: 14, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Feather name="terminal" size={14} color="#7A4A00" />
+                <Feather name="shield" size={14} color="#7A4A00" />
                 <View>
-                  <Text style={{ color: "#7A4A00", fontFamily: "Inter_600SemiBold", fontSize: 11, letterSpacing: 0.4 }}>DEV MODE — YOUR OTP</Text>
+                  <Text style={{ color: "#7A4A00", fontFamily: "Inter_600SemiBold", fontSize: 11, letterSpacing: 0.4 }}>IN-APP VERIFICATION CODE</Text>
                   <Text style={{ color: "#7A4A00", fontFamily: "Inter_700Bold", fontSize: 26, letterSpacing: 6, marginTop: 2 }}>{devOtp}</Text>
                 </View>
               </View>
@@ -251,12 +270,13 @@ export default function OTPVerify() {
               </Text>
             </Pressable>
 
-            {/* Android SMS autofill note */}
+            {/* Android clipboard fallback */}
             {Platform.OS === "android" && (
-              <Text style={{ color: "#9C97B8", fontFamily: "Inter_400Regular", fontSize: 12, textAlign: "center", lineHeight: 17 }}>
-                {/* TODO: Add react-native-otp-verify for automatic SMS autofill on Android */}
-                On Android, copy the code from your SMS to fill in automatically.
-              </Text>
+              <Pressable onPress={() => { void fillFromClipboard(); }} style={{ alignItems: "center", paddingVertical: 4 }}>
+                <Text style={{ color: "#5B3DFF", fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+                  Paste 6-digit code from clipboard
+                </Text>
+              </Pressable>
             )}
           </View>
 

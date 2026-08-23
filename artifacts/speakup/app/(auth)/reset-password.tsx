@@ -20,9 +20,9 @@ import { useAuth } from "@/context/AuthContext";
 export default function ResetPassword() {
   const insets = useSafeAreaInsets();
   const { resetPassword } = useAuth();
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, code: initialCode } = useLocalSearchParams<{ email?: string; code?: string }>();
 
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);

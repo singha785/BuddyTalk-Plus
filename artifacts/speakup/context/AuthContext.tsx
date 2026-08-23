@@ -41,12 +41,12 @@ type AuthContextValue = {
     }>,
   ) => Promise<UserProfile>;
   refresh: () => Promise<void>;
-  /** Request a 6-digit password reset code. Returns devCode in non-production. */
-  forgotPassword: (email: string) => Promise<{ devCode: string | null }>;
+  /** Request a reset code. fallbackCode supports provider-free in-app recovery. */
+  forgotPassword: (email: string) => Promise<{ devCode: string | null; fallbackCode: string | null; recoveryLink: string | null }>;
   /** Verify a reset code and set a new password. Auto-signs the user in on success. */
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
-  /** Send a phone OTP. Returns devOtp in non-production. */
-  sendPhoneOTP: (phone: string, purpose: "signin" | "signup") => Promise<{ devOtp: string | null }>;
+  /** Send a phone OTP. fallbackCode supports provider-free verification. */
+  sendPhoneOTP: (phone: string, purpose: "signin" | "signup") => Promise<{ devOtp: string | null; fallbackCode: string | null; verificationLink: string | null }>;
   /** Verify a phone OTP and sign in (creating an account for new users). */
   verifyPhoneOTP: (phone: string, code: string, name?: string) => Promise<void>;
 };
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const forgotPassword = useCallback(async (email: string) => {
-    const res = await customFetch<{ sent: boolean; devCode: string | null }>(
+    const res = await customFetch<{ sent: boolean; devCode: string | null; fallbackCode?: string; recoveryLink?: string }>(
       "/auth/forgot-password",
       {
         method: "POST",
@@ -148,7 +148,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         responseType: "json",
       },
     );
-    return { devCode: res.devCode ?? null };
+    return {
+      devCode: res.devCode ?? null,
+      fallbackCode: res.fallbackCode ?? null,
+      recoveryLink: res.recoveryLink ?? null,
+    };
   }, []);
 
   const resetPassword = useCallback(
@@ -167,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sendPhoneOTP = useCallback(
     async (phone: string, purpose: "signin" | "signup") => {
-      const res = await customFetch<{ sent: boolean; devOtp: string | null }>(
+      const res = await customFetch<{ sent: boolean; devOtp: string | null; fallbackCode?: string; verificationLink?: string }>(
         "/auth/otp/send",
         {
           method: "POST",
@@ -175,7 +179,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           responseType: "json",
         },
       );
-      return { devOtp: res.devOtp ?? null };
+      return {
+        devOtp: res.devOtp ?? null,
+        fallbackCode: res.fallbackCode ?? null,
+        verificationLink: res.verificationLink ?? null,
+      };
     },
     [],
   );

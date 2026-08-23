@@ -94,14 +94,14 @@ export default function SignUp() {
     setSubmitting(true);
     setError(null);
     try {
-      const { devOtp } = await sendPhoneOTP(phone, "signup");
+      const { fallbackCode, devOtp } = await sendPhoneOTP(phone, "signup");
       router.push({
         pathname: "/(auth)/otp-verify",
         params: {
           phone: phoneNormalized,
           purpose: "signup",
           name: phoneName.trim(),
-          devOtp: devOtp ?? "",
+          devOtp: fallbackCode ?? devOtp ?? "",
         },
       });
     } catch (e) {

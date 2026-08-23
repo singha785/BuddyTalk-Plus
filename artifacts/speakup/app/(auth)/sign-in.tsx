@@ -151,10 +151,10 @@ export default function SignIn() {
     setSubmitting(true);
     setError(null);
     try {
-      const { devOtp } = await auth.sendPhoneOTP(phone, "signin");
+      const { fallbackCode, devOtp } = await auth.sendPhoneOTP(phone, "signin");
       router.push({
         pathname: "/(auth)/otp-verify",
-        params: { phone: phoneNormalized, purpose: "signin", devOtp: devOtp ?? "" },
+        params: { phone: phoneNormalized, purpose: "signin", devOtp: fallbackCode ?? devOtp ?? "" },
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";

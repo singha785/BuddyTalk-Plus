@@ -16,8 +16,6 @@ import { Pressable } from "@/components/Pressable";
 import { useAuth } from "@/context/AuthContext";
 
 const RESEND_COOLDOWN = 30;
-const IS_DEV = process.env.NODE_ENV !== "production";
-
 export default function ForgotPassword() {
   const insets = useSafeAreaInsets();
   const { forgotPassword } = useAuth();
@@ -52,7 +50,7 @@ export default function ForgotPassword() {
     setError(null);
     try {
       const result = await forgotPassword(email.trim());
-      setDevCode(result.devCode);
+      setDevCode(result.fallbackCode ?? result.devCode);
       setStep("sent");
       startCooldown();
     } catch (e) {
@@ -135,17 +133,17 @@ export default function ForgotPassword() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: "#0E6F5A", fontFamily: "Inter_700Bold", fontSize: 14 }}>Code sent!</Text>
                     <Text style={{ color: "#0E6F5A", fontFamily: "Inter_400Regular", fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-                      A 6-digit reset code was sent to your email. It expires in 15 minutes.
+                      Continue securely in the app with the recovery code below. It expires in 15 minutes.
                     </Text>
                   </View>
                 </View>
 
-                {/* Dev mode: show the code */}
+                {/* Provider-free in-app recovery */}
                 {devCode && (
                   <View style={{ backgroundColor: "#FFF1D6", borderRadius: 14, padding: 14, flexDirection: "row", alignItems: "center", gap: 10 }}>
-                    <Feather name="terminal" size={14} color="#7A4A00" />
+                    <Feather name="shield" size={14} color="#7A4A00" />
                     <View>
-                      <Text style={{ color: "#7A4A00", fontFamily: "Inter_600SemiBold", fontSize: 11, letterSpacing: 0.4 }}>DEV MODE — RESET CODE</Text>
+                      <Text style={{ color: "#7A4A00", fontFamily: "Inter_600SemiBold", fontSize: 11, letterSpacing: 0.4 }}>IN-APP RECOVERY CODE</Text>
                       <Text style={{ color: "#7A4A00", fontFamily: "Inter_700Bold", fontSize: 24, letterSpacing: 4, marginTop: 2 }}>{devCode}</Text>
                     </View>
                   </View>
@@ -154,7 +152,7 @@ export default function ForgotPassword() {
                 <Button
                   label="Enter reset code"
                   icon="arrow-right"
-                  onPress={() => router.push({ pathname: "/(auth)/reset-password", params: { email: email.trim() } })}
+                  onPress={() => router.push({ pathname: "/(auth)/reset-password", params: { email: email.trim(), code: devCode ?? "" } })}
                   fullWidth
                   size="lg"
                 />

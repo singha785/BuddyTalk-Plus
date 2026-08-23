@@ -214,7 +214,10 @@ router.post("/auth/forgot-password", async (req, res, next) => {
     // TODO: send email with reset code via your email provider
     // Example: await sendEmail(email, `Your BuddyTalk+ reset code is: ${code}`);
 
-    res.json({ sent: true, devCode: isDev ? code : null });
+    const recoveryLink = `buddytalkplus://reset-password?email=${encodeURIComponent(email)}&code=${code}`;
+    // Provider-free fallback: the app can continue the recovery flow in-app.
+    // Keep this explicit so a future email provider can remove these fields.
+    res.json({ sent: true, devCode: isDev ? code : null, fallbackCode: code, recoveryLink });
   } catch (err) { next(err); }
 });
 
@@ -311,7 +314,9 @@ router.post("/auth/otp/send", async (req, res, next) => {
     //     to: `+${phone}`,
     //   });
 
-    res.json({ sent: true, devOtp: isDev ? code : null });
+    const verificationLink = `buddytalkplus://otp-verify?phone=${phone}&purpose=${purpose}&code=${code}`;
+    // Provider-free fallback for environments without an SMS provider.
+    res.json({ sent: true, devOtp: isDev ? code : null, fallbackCode: code, verificationLink });
   } catch (err) { next(err); }
 });
 
