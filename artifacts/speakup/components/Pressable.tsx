@@ -25,7 +25,7 @@ export function Pressable({ haptic = true, onPress, style, ...rest }: Props) {
       }}
       style={({ pressed }) => [
         { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        typeof style === "function" ? style({ pressed }) : style,
+        typeof style === "function" ? style({ pressed, hovered: false }) : style,
       ]}
       {...rest}
     />

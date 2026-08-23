@@ -2,10 +2,12 @@ import type { NextFunction, Request, Response } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { db, sessionsTable, usersTable, type User } from "@workspace/db";
 
-declare module "express-serve-static-core" {
-  interface Request {
-    user?: User;
-    sessionToken?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      sessionToken?: string;
+    }
   }
 }
 

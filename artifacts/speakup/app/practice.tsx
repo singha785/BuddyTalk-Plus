@@ -25,6 +25,21 @@ import { useColors } from "@/hooks/useColors";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { showAlert } from "@/utils/alert";
 
+// Greeting suggestions shown in the first 28 seconds of a call
+const GREETING_HINTS = [
+  "Try saying: Hi! Where are you calling from today?",
+  "Try saying: Hello! What's your name?",
+  "Try saying: Good to meet you! How's your day going?",
+  "Try saying: Hey there! Do you practice English often?",
+  "Try saying: Nice to connect! Tell me a bit about yourself.",
+  "Try saying: Hello! I'm really glad to practice with you.",
+  "Try saying: Hi! Is this your first time using BuddyTalk?",
+  "Try saying: Good day! What topics do you enjoy discussing?",
+];
+
+const REAL_TALK_GOAL_SECS = 300;   // 5 minutes
+const SPEAKING_RATIO_FULL = 0.20;  // must speak ≥20 % of call time for full coins
+
 // searching → server is finding a user
 // ringing   → receiver's phone is ringing, waiting for accept/reject
 // in-call   → call accepted, live session
@@ -48,15 +63,27 @@ export default function PracticeScreen() {
   const [tipIndex, setTipIndex] = useState(0);
   const [partner, setPartner] = useState<MatchedPartner | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
+  const [callNote, setCallNote] = useState<string | null>(null);
+
+  // Greeting hint (first 28 s of call)
+  const [greetingHint, setGreetingHint] = useState(GREETING_HINTS[0]);
+  const [greetingHintVisible, setGreetingHintVisible] = useState(false);
+  const hintOpacity = useRef(new Animated.Value(0)).current;
 
   const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulse = useRef(new Animated.Value(0)).current;
   const ringPulse = useRef(new Animated.Value(0)).current;
 
-  // Keep a ref to the latest stage so callbacks defined once always see the
-  // current value without stale closure issues (Fix for Bug 2).
+  // Keep refs to current stage and mute state so closures never go stale
   const stageRef = useRef<Stage>(stage);
   useEffect(() => { stageRef.current = stage; }, [stage]);
+
+  const mutedRef = useRef(false);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
+
+  // Tracks cumulative seconds when mic was NOT muted (proxy for speaking)
+  const speakingSecondsRef = useRef(0);
+  const speakingRef = useRef(false);
 
   // ── Pulse animations ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -86,14 +113,13 @@ export default function PracticeScreen() {
   const endCallRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   // ── WebRTC ──────────────────────────────────────────────────────────────────
-  // onCallEnded uses endCallRef so it is stable (no deps) and always calls the
-  // current endCall — fixes the case where the remote side hangs up and the
-  // local screen stays frozen because a stale closure had the wrong stage.
   const webrtc = useWebRTC({
     onCallEnded: useCallback(() => {
       void endCallRef.current?.();
     }, []),
   });
+
+  useEffect(() => { speakingRef.current = webrtc.speaking; }, [webrtc.speaking]);
 
   const clearCallTimeout = () => {
     if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null; }
@@ -110,10 +136,8 @@ export default function PracticeScreen() {
   // ── Caller mode: emit call_user on mount ────────────────────────────────────
   useEffect(() => {
     if (isIncomingMode || !socket.connected) return;
-
     socket.callUser();
     startCallTimeout("No one available right now. Try again in a moment.");
-
     return () => {
       socket.cancelCall();
       clearCallTimeout();
@@ -121,7 +145,6 @@ export default function PracticeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket.connected, isIncomingMode]);
 
-  // ── Incoming mode: server sends call_matched after call_accept ──────────────
   useEffect(() => {
     if (isIncomingMode) {
       startCallTimeout("Call failed to connect. Please try again.");
@@ -129,15 +152,11 @@ export default function PracticeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isIncomingMode]);
 
-  // ── call_ringing → switch to ringing stage ─────────────────────────────────
   useEffect(() => {
-    const off = socket.onCallRinging(() => {
-      setStage("ringing");
-    });
+    const off = socket.onCallRinging(() => setStage("ringing"));
     return off;
   }, [socket]);
 
-  // ── call_matched → go in-call ───────────────────────────────────────────────
   useEffect(() => {
     const off = socket.onCallMatched(async (matched) => {
       clearCallTimeout();
@@ -152,7 +171,6 @@ export default function PracticeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, webrtc]);
 
-  // ── No users available ──────────────────────────────────────────────────────
   useEffect(() => {
     const off = socket.onNoUsersAvailable(() => {
       clearCallTimeout();
@@ -163,7 +181,6 @@ export default function PracticeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
-  // ── Call cancelled by caller (receiver side) ────────────────────────────────
   useEffect(() => {
     if (!isIncomingMode) return;
     const off = socket.onCallCancelled(() => {
@@ -175,10 +192,19 @@ export default function PracticeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, isIncomingMode]);
 
-  // ── Call timer ──────────────────────────────────────────────────────────────
+  // ── Call timer — also tracks speaking seconds (Task 5 VAD) ─────────────────
   useEffect(() => {
     if (stage !== "in-call") return;
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    speakingSecondsRef.current = 0; // reset on each call
+    const id = setInterval(() => {
+      setSeconds((s) => s + 1);
+       // Web uses microphone-level detection. Native falls back to the
+       // explicit mute state because react-native-webrtc does not expose
+       // portable audio metering.
+       if (Platform.OS === "web" ? speakingRef.current : !mutedRef.current) {
+         speakingSecondsRef.current += 1;
+       }
+    }, 1000);
     return () => clearInterval(id);
   }, [stage]);
 
@@ -200,17 +226,28 @@ export default function PracticeScreen() {
     return () => clearInterval(id);
   }, [stage]);
 
+  // ── Greeting hint overlay — shown for first 28 s of call (Task 1 assist) ───
+  useEffect(() => {
+    if (stage !== "in-call") return;
+    const hint = GREETING_HINTS[Math.floor(Math.random() * GREETING_HINTS.length)];
+    setGreetingHint(hint);
+    setGreetingHintVisible(true);
+    hintOpacity.setValue(0);
+    Animated.sequence([
+      Animated.timing(hintOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.delay(22000),
+      Animated.timing(hintOpacity, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]).start(() => setGreetingHintVisible(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
+
+  // ── endCall ─────────────────────────────────────────────────────────────────
   const endCall = async () => {
-    // Use stageRef so this function always reads the current stage even when
-    // called from a closure that was created in a previous render.
     if (stageRef.current === "ended") return;
     webrtc.endCall();
     const minutes = Math.max(1, Math.round(seconds / 60));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    const { good, improve } = generateContextualFeedback({
-      seconds,
-      partnerRegion: partner?.partnerRegion,
-    });
+    const { good, improve } = generateContextualFeedback({ seconds, partnerRegion: partner?.partnerRegion });
     await recordCall({
       minutes,
       type: "practice",
@@ -220,18 +257,23 @@ export default function PracticeScreen() {
       partnerRegion: partner?.partnerRegion,
       feedback: { good, improve },
     });
-    // Track partner as greeted — auto-completes task-greet-5 when 5 unique partners
+    // Track partner as greeted (auto-completes task-greet-5 when 5 unique partners)
     if (partner?.partnerId) {
       await trackGreeting(partner.partnerId);
     }
-    // Auto-complete "have a 5-minute call" task
-    if (seconds >= 300 && !state.completedTasks.includes("task-real-talk")) {
-      await completeTask("task-real-talk", 14);
+    // ── Task 5: award coins based on speaking activity ──────────────────────
+    if (seconds >= REAL_TALK_GOAL_SECS && !state.completedTasks.includes("task-real-talk")) {
+      const speakingRatio = speakingSecondsRef.current / Math.max(seconds, 1);
+      if (speakingRatio >= SPEAKING_RATIO_FULL) {
+        await completeTask("task-real-talk", 14);
+      } else {
+        await completeTask("task-real-talk", 4);
+        setCallNote("You were mostly muted this call — try speaking more next time to earn the full +14 coins.");
+      }
     }
     setStage("ended");
   };
 
-  // Keep endCallRef in sync so the WebRTC onCallEnded callback is never stale.
   endCallRef.current = endCall;
 
   const handleHangup = () => {
@@ -261,6 +303,7 @@ export default function PracticeScreen() {
     setTipIndex(0);
     setPartner(null);
     setCallError(null);
+    setCallNote(null);
     socket.callUser();
     startCallTimeout("No one available right now. Try again in a moment.");
   };
@@ -282,17 +325,16 @@ export default function PracticeScreen() {
   const partnerLevel = partner?.partnerLevel ?? "";
   const partnerInitials = (partner?.partnerName ?? "?").substring(0, 2).toUpperCase();
 
-  const stageLabel = stage === "searching"
-    ? "FINDING PARTNER"
-    : stage === "ringing"
-      ? "RINGING"
-      : "LIVE PRACTICE";
-
+  const stageLabel = stage === "searching" ? "FINDING PARTNER" : stage === "ringing" ? "RINGING" : "LIVE PRACTICE";
   const stageSubtitle = stage === "searching"
     ? "Looking for someone online…"
     : stage === "ringing"
       ? isIncomingMode ? "Connecting…" : "Waiting for them to pick up…"
       : formatTime(seconds);
+
+  // 5-min goal progress (Task 5 live indicator)
+  const goalPct = Math.min(100, Math.round((seconds / REAL_TALK_GOAL_SECS) * 100));
+  const realTalkDone = state.completedTasks.includes("task-real-talk");
 
   return (
     <>
@@ -311,11 +353,13 @@ export default function PracticeScreen() {
             partnerName={partnerName}
             partnerRegion={partner?.partnerRegion}
             callError={callError}
+            callNote={callNote}
             onDone={() => router.back()}
             onAgain={handleCallAgain}
           />
         ) : (
           <View style={{ flex: 1, paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16), paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}>
+
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <RNPressable
@@ -338,6 +382,27 @@ export default function PracticeScreen() {
               </View>
             </View>
 
+            {/* ── 5-min call goal progress strip (Task 5) ─────────────────── */}
+            {stage === "in-call" && !realTalkDone && (
+              <View style={{ marginTop: 10, backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                    <Feather name="target" size={11} color="rgba(255,255,255,0.6)" />
+                    <Text style={{ color: "#FFFFFF", opacity: 0.6, fontFamily: "Inter_500Medium", fontSize: 11, letterSpacing: 0.4 }}>
+                      5-MIN CALL GOAL
+                    </Text>
+                  </View>
+                  <Text style={{ color: seconds >= REAL_TALK_GOAL_SECS ? "#34D27D" : "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 11 }}>
+                    {formatTime(seconds)} / 5:00{seconds >= REAL_TALK_GOAL_SECS ? " ✓" : ""}
+                  </Text>
+                </View>
+                <View style={{ height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.18)", flexDirection: "row", overflow: "hidden" }}>
+                  <View style={{ flex: goalPct, height: 4, backgroundColor: seconds >= REAL_TALK_GOAL_SECS ? "#34D27D" : "#FF7A45" }} />
+                  {goalPct < 100 && <View style={{ flex: 100 - goalPct, height: 4 }} />}
+                </View>
+              </View>
+            )}
+
             {/* Status text under header */}
             {(stage === "searching" || stage === "ringing") && (
               <View style={{ alignItems: "center", marginTop: 16 }}>
@@ -357,7 +422,7 @@ export default function PracticeScreen() {
             )}
 
             {/* Partner avatar */}
-            <View style={{ alignItems: "center", marginTop: stage === "in-call" ? 60 : 48 }}>
+            <View style={{ alignItems: "center", marginTop: stage === "in-call" ? 32 : 48 }}>
               <View style={{ width: 160, height: 160, alignItems: "center", justifyContent: "center" }}>
                 {stage === "ringing" ? (
                   <>
@@ -379,9 +444,26 @@ export default function PracticeScreen() {
               ) : null}
             </View>
 
-            {/* AI Coach tips — only in-call */}
+            {/* AI Coach tips + greeting hint — in-call only */}
             {stage === "in-call" ? (
-              <ScrollView style={{ flex: 1, marginTop: 32 }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+              <ScrollView style={{ flex: 1, marginTop: 20 }} contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
+
+                {/* ── Greeting hint overlay (Task 1) ──────────────────────── */}
+                {greetingHintVisible && (
+                  <Animated.View style={{ opacity: hintOpacity, backgroundColor: "rgba(255,122,69,0.18)", borderRadius: 16, padding: 14 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Feather name="message-circle" size={13} color="#FF7A45" />
+                      <Text style={{ color: "#FF7A45", fontFamily: "Inter_700Bold", fontSize: 11, letterSpacing: 0.5 }}>GREETING IDEA</Text>
+                      <RNPressable onPress={() => { hintOpacity.stopAnimation(); setGreetingHintVisible(false); }} hitSlop={8} style={{ marginLeft: "auto" }}>
+                        <Feather name="x" size={13} color="rgba(255,122,69,0.6)" />
+                      </RNPressable>
+                    </View>
+                    <Text style={{ color: "#FFFFFF", opacity: 0.9, fontFamily: "Inter_500Medium", fontSize: 14, lineHeight: 20 }}>
+                      {greetingHint}
+                    </Text>
+                  </Animated.View>
+                )}
+
                 {!webrtc.isSupported ? (
                   <View style={{ backgroundColor: "rgba(255,122,69,0.18)", borderRadius: 18, padding: 16 }}>
                     <Text style={{ color: "#FF7A45", fontFamily: "Inter_700Bold", fontSize: 13, letterSpacing: 0.5 }}>VOICE CALLING</Text>
@@ -403,10 +485,10 @@ export default function PracticeScreen() {
                 ) : null}
                 <View style={{ backgroundColor: "rgba(255,255,255,0.95)", borderRadius: 18, padding: 16 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
+                    <View style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: "#5B3DFF", alignItems: "center", justifyContent: "center" }}>
                       <Feather name="cpu" size={14} color="#FFFFFF" />
                     </View>
-                    <Text style={{ color: colors.primary, fontFamily: "Inter_700Bold", fontSize: 12, letterSpacing: 1 }}>AI COACH</Text>
+                    <Text style={{ color: "#5B3DFF", fontFamily: "Inter_700Bold", fontSize: 12, letterSpacing: 1 }}>AI COACH</Text>
                   </View>
                   <Text style={{ color: "#1A1530", fontFamily: "Inter_500Medium", fontSize: 15, marginTop: 10, lineHeight: 20 }}>
                     {AI_SUGGESTIONS[tipIndex]}
@@ -456,11 +538,12 @@ function RoundButton({ icon, onPress, bg, size = 60 }: {
   );
 }
 
-function EndedView({ seconds, partnerName, partnerRegion, callError, onDone, onAgain }: {
+function EndedView({ seconds, partnerName, partnerRegion, callError, callNote, onDone, onAgain }: {
   seconds: number;
   partnerName: string;
   partnerRegion?: string;
   callError: string | null;
+  callNote: string | null;
   onDone: () => void;
   onAgain: () => void;
 }) {
@@ -489,7 +572,18 @@ function EndedView({ seconds, partnerName, partnerRegion, callError, onDone, onA
           <Text style={{ color: "#FFFFFF", opacity: 0.85, fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center", marginTop: 8 }}>
             You spoke for {minutes} minute{minutes === 1 ? "" : "s"} with {partnerName}.
           </Text>
-          <View style={{ marginTop: 32, gap: 12 }}>
+
+          {/* Speaking-activity note (Task 5 feedback) */}
+          {callNote && (
+            <View style={{ backgroundColor: "rgba(255,122,69,0.2)", borderRadius: 16, padding: 14, marginTop: 16, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+              <Feather name="mic-off" size={16} color="#FF7A45" style={{ marginTop: 1 }} />
+              <Text style={{ color: "#FF7A45", fontFamily: "Inter_500Medium", fontSize: 13, flex: 1, lineHeight: 19 }}>
+                {callNote}
+              </Text>
+            </View>
+          )}
+
+          <View style={{ marginTop: 24, gap: 12 }}>
             <Card>
               <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
                 <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: "#DDF5EE", alignItems: "center", justifyContent: "center" }}>

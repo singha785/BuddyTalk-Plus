@@ -41,6 +41,14 @@ type AuthContextValue = {
     }>,
   ) => Promise<UserProfile>;
   refresh: () => Promise<void>;
+  /** Request a 6-digit password reset code. Returns devCode in non-production. */
+  forgotPassword: (email: string) => Promise<{ devCode: string | null }>;
+  /** Verify a reset code and set a new password. Auto-signs the user in on success. */
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
+  /** Send a phone OTP. Returns devOtp in non-production. */
+  sendPhoneOTP: (phone: string, purpose: "signin" | "signup") => Promise<{ devOtp: string | null }>;
+  /** Verify a phone OTP and sign in (creating an account for new users). */
+  verifyPhoneOTP: (phone: string, code: string, name?: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -131,6 +139,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const forgotPassword = useCallback(async (email: string) => {
+    const res = await customFetch<{ sent: boolean; devCode: string | null }>(
+      "/auth/forgot-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        responseType: "json",
+      },
+    );
+    return { devCode: res.devCode ?? null };
+  }, []);
+
+  const resetPassword = useCallback(
+    async (email: string, code: string, newPassword: string) => {
+      const res = await customFetch<AuthResponse>("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ email, code, newPassword }),
+        responseType: "json",
+      });
+      await persistAuth(res.token, res.user);
+      setToken(res.token);
+      setUser(res.user);
+    },
+    [],
+  );
+
+  const sendPhoneOTP = useCallback(
+    async (phone: string, purpose: "signin" | "signup") => {
+      const res = await customFetch<{ sent: boolean; devOtp: string | null }>(
+        "/auth/otp/send",
+        {
+          method: "POST",
+          body: JSON.stringify({ phone, purpose }),
+          responseType: "json",
+        },
+      );
+      return { devOtp: res.devOtp ?? null };
+    },
+    [],
+  );
+
+  const verifyPhoneOTP = useCallback(
+    async (phone: string, code: string, name?: string) => {
+      const res = await customFetch<AuthResponse>("/auth/otp/verify", {
+        method: "POST",
+        body: JSON.stringify({ phone, code, ...(name ? { name } : {}) }),
+        responseType: "json",
+      });
+      await persistAuth(res.token, res.user);
+      setToken(res.token);
+      setUser(res.user);
+    },
+    [],
+  );
+
   const requestMagicLink = useCallback(async (email: string) => {
     const res = await customFetch<{ sent: boolean; devToken: string | null }>(
       "/auth/magic-link",
@@ -200,6 +263,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       signIn,
       signUp,
+      forgotPassword,
+      resetPassword,
+      sendPhoneOTP,
+      verifyPhoneOTP,
       requestMagicLink,
       verifyMagicLink,
       signOut,
@@ -212,6 +279,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       signIn,
       signUp,
+      forgotPassword,
+      resetPassword,
+      sendPhoneOTP,
+      verifyPhoneOTP,
       requestMagicLink,
       verifyMagicLink,
       signOut,

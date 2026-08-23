@@ -1,0 +1,49 @@
+The current auth flow (likely under app/(auth)/) only supports basic email + password login/signup. I need to upgrade it with the features below, without breaking existing navigation, styling conventions, or the expo-router structure already in use.
+
+Goals
+1. Forgot Password flow
+Add a "Forgot Password?" link on the login screen.
+New screen: user enters email (or phone, see OTP section) → triggers a reset code/link.
+If a backend already exists (check api-server or server/ folder for auth routes), wire this to a real endpoint (e.g. POST /auth/forgot-password, POST /auth/reset-password). If no such endpoint exists yet, create one (Express + whatever session/DB library is already used — check drizzle-orm usage in the project).
+Include a "reset code sent" confirmation state and a "resend code" option with a cooldown timer (e.g. 30s).
+2. Password visibility toggle (show/hide)
+On both Login and Signup password fields (and Confirm Password if present), add an eye/eye-off icon (use whatever icon library is already installed — check @expo/vector-icons or lucide-react-native in package.json) that toggles secureTextEntry.
+Maintain cursor position and keyboard type when toggling (standard RN behavior, just confirm it isn't broken by any custom TextInput wrapper).
+Add a simple password strength indicator on signup (weak/medium/strong) based on length + character variety — no external dependency needed, a small local utility function is enough.
+3. Dual login: Email OR Mobile OTP
+On both Login and Signup, add a segmented toggle/tab: "Email" vs "Phone".
+Phone flow:
+User enters phone number (with country code picker if not already present — check if libphonenumber-js or similar is installed; if not, a simple default-country-code approach is fine for now).
+"Send OTP" button → calls backend to trigger SMS OTP (need an SMS provider — check if Twilio/MSG91/Firebase is already configured anywhere in api-server; if not, stub the endpoint clearly with a TODO: plug in SMS provider comment so I can add API keys later).
+6-digit OTP input (use segmented OTP input boxes, not a single field — check if a package like react-native-otp-entry or similar exists already; if not, add a lightweight custom component, don't pull in a heavy dependency).
+Verify OTP → on success, log in / complete signup same as email flow (same JWT/session mechanism already used for email auth — reuse it, don't create a parallel auth system).
+4. OTP Auto-read / Autofill
+
+This is Expo managed workflow, so implement it the correct way for that constraint:
+
+iOS: use textContentType="oneTimeCode" on the OTP TextInput(s) — this enables the native QuickType autofill suggestion above the keyboard automatically. No extra library needed.
+Android: true SMS auto-read (without user tapping anything) requires either:
+The SMS Retriever API (needs a formatted SMS with an app hash code, and typically needs a config plugin / native module — react-native-otp-verify is the common library, but confirm it has an Expo config plugin or works with a dev client build, since this project uses EAS builds already, that's fine).
+OR the simpler SMS User Consent API which just needs RECORD_SMS-free permission (no runtime permission prompt) and pops a system dialog asking the user to allow autofill — this is less invasive and preferred if available in whatever library gets used.
+Add the required permission(s) to app.json under android.permissions if the chosen library needs one (e.g. RECEIVE_SMS for SMS Retriever), and add the necessary config plugin entry.
+Make sure this is optional/graceful — if autofill fails or isn't supported on a device, the user must still be able to type the 6-digit code manually.
+5. Extra creative/advanced features (add if reasonable, keep optional/toggleable per feature)
+
+Pick and implement what makes sense given the current codebase, don't force all of these if they'd bloat scope too much — but here are good candidates:
+
+Biometric login (Face ID/fingerprint) for returning users using expo-local-authentication (check if already installed) — "Enable Face ID login" toggle after first successful password login.
+Magic link login (passwordless email link) as an alternative to password, if backend can support generating a short-lived signed token.
+Rate limiting / lockout UI: after N failed attempts, show a cooldown message (backend should already rate-limit; frontend just needs to reflect it nicely instead of a generic error).
+"Remember me" / persistent session toggle on login.
+Real-time inline validation: email format, phone format, password rules — validate as the user types, not just on submit.
+Social login stubs (Google/Apple) if expo-auth-session or similar is already partially set up — otherwise skip, don't add a huge new dependency just for this.
+Constraints / Don'ts
+Don't change the navigation library or restructure app/ routing conventions already in place.
+Don't introduce a second state-management pattern if one (Context/Zustand/etc.) already exists — check context/ folder and reuse it.
+Don't hardcode API URLs — use whatever EXPO_PUBLIC_DOMAIN/env pattern is already used elsewhere in the app (I saw EXPO_PUBLIC_DOMAIN in eas.json, follow that convention).
+Keep all new UI consistent with the existing design system/theme (check constants/ for colors/typography and reuse them, don't invent new ones).
+Every new native capability (biometrics, SMS autofill, etc.) must be Expo-config-plugin compatible since this app uses Expo Prebuild + EAS Build, not bare React Native.
+Deliverables
+List every file you are creating or modifying, with a one-line reason, before writing code.
+Implement changes incrementally — auth screens first, then OTP flow, then autofill, then extras — so I can test each piece with eas build --profile preview between steps if needed.
+At the end, summarize any new app.json permissions/plugins added and any new environment variables I need to set.

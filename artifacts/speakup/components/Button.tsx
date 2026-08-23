@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View, type ViewStyle } from "react-native";
 
 import { Pressable } from "@/components/Pressable";
 import { useColors } from "@/hooks/useColors";
@@ -31,7 +31,7 @@ export function Button({
   const heights = { md: 50, lg: 58 };
   const fontSizes = { md: 15, lg: 17 };
 
-  const baseStyle = {
+  const baseStyle: ViewStyle = {
     height: heights[size],
     borderRadius: 999,
     paddingHorizontal: size === "lg" ? 24 : 18,

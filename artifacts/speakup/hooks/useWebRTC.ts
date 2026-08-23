@@ -38,6 +38,8 @@ export type WebRTCHandle = {
   toggleMute: () => boolean;
   isSupported: boolean;
   micError: string | null;
+  /** True when the local microphone has detectable audio (web only). */
+  speaking: boolean;
 };
 
 export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
@@ -46,10 +48,14 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
   const localStreamRef = useRef<MediaStream | null>(null);
   const partnerSocketIdRef = useRef<string | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const speakingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Buffer signals that arrive before the RTCPeerConnection is ready OR
   // before remoteDescription has been set (ICE candidates need both)
   const pendingSignalsRef = useRef<PendingSignal[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
+  const [speaking, setSpeaking] = useState(false);
 
   // --- FIX Bug 2: always call the latest callbacks, even if the socket
   //     listener effect only runs once (with [socket] as dependency).
@@ -70,6 +76,16 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
+    if (speakingPollRef.current) {
+      clearInterval(speakingPollRef.current);
+      speakingPollRef.current = null;
+    }
+    analyserRef.current = null;
+    if (audioContextRef.current) {
+      void audioContextRef.current.close().catch(() => undefined);
+      audioContextRef.current = null;
+    }
+    setSpeaking(false);
     partnerSocketIdRef.current = null;
     pendingSignalsRef.current = [];
     if (Platform.OS === "web" && typeof document !== "undefined" && remoteAudioRef.current) {
@@ -80,6 +96,39 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     // Stop in-call audio routing on native
     if (Platform.OS !== "web") {
       InCallManager?.stop();
+    }
+  }, []);
+
+  const startSpeakingMonitor = useCallback((stream: MediaStream) => {
+    if (
+      Platform.OS !== "web" ||
+      typeof window === "undefined" ||
+      typeof window.AudioContext === "undefined" ||
+      stream.getAudioTracks().length === 0
+    ) return;
+
+    try {
+      const context = new window.AudioContext();
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      const source = context.createMediaStreamSource(stream);
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.fftSize);
+      audioContextRef.current = context;
+      analyserRef.current = analyser;
+      speakingPollRef.current = setInterval(() => {
+        const currentAnalyser = analyserRef.current;
+        if (!currentAnalyser) return;
+        currentAnalyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (const value of data) {
+          const normalized = (value - 128) / 128;
+          sum += normalized * normalized;
+        }
+        setSpeaking(Math.sqrt(sum / data.length) > 0.035);
+      }, 250);
+    } catch {
+      // Audio analysis is an optional enhancement; calling still works without it.
     }
   }, []);
 
@@ -222,6 +271,7 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
       }
 
       localStreamRef.current = stream;
+      startSpeakingMonitor(stream);
 
       // ── Start in-call audio routing on native (must happen before PC) ──
       if (Platform.OS !== "web") {
@@ -273,7 +323,7 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
         }
       }
     },
-    [isSupported, cleanup, socket, playRemoteStream, drainPendingSignals],
+    [isSupported, cleanup, socket, playRemoteStream, drainPendingSignals, startSpeakingMonitor],
   );
 
   const endCall = useCallback(() => {
@@ -292,5 +342,5 @@ export function useWebRTC(callbacks: WebRTCCallbacks): WebRTCHandle {
     return !audioTrack.enabled;
   }, []);
 
-  return { startCall, endCall, toggleMute, isSupported, micError };
+  return { startCall, endCall, toggleMute, isSupported, micError, speaking };
 }

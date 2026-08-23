@@ -1,0 +1,23 @@
+I want to redesign the "Daily Tasks" screen in my Expo app (BuddyTalk+) so every task requires genuine user effort and can't be completed by just tapping a "Done" button without actually doing the activity. Please implement the following for each task:
+
+TASK 1 — "Greet five people":
+- Change this from a scripted self-practice exercise into a task tied to real calls with real people (using the app's existing calling/matching feature). Progress toward "X/5 greeted" should only increase when the user actually completes a greeting during a real call with a matched stranger, not from a standalone practice screen.
+- During an active call, show a small on-screen text overlay or caption suggesting a greeting phrase the user can read and say out loud (e.g., "Try saying: Hi, how's your day going?"). This should rotate through different greeting styles (casual, formal, morning-specific, etc.) so users have a natural prompt to speak from, without it feeling scripted — think of it as a subtle assist, not a script they're forced to follow.
+- After the greeting portion of the call (first ~15-20 seconds, or a natural pause), detect that speech occurred (basic speech/audio activity detection is enough — doesn't need to verify exact words) and count it as one completed greeting toward the day's 5.
+- Replace the current numeric "0/5" progress indicator with 5 small avatar/circle icons that visually fill in or highlight as each greeting completes, instead of just a number.
+- Add small positive micro-feedback (e.g., a brief animation or short message like "Nice greeting!") each time one completes, instead of only updating a counter silently.
+
+TASK 2 — "Record your self-introduction":
+- After the user finishes recording, don't just mark it "Done" — process the recording and show simple feedback, such as a rough fluency/clarity indicator or word count vs. the 60-second goal. It doesn't need to be highly sophisticated, but there must be some feedback derived from the actual recording, not just a completion checkmark.
+
+TASK 3 — "Listen and repeat":
+- Currently this only has a manual "Done" button with no verification the user actually repeated anything aloud. Change this so the user must record themselves repeating each phrase, and show basic feedback (e.g., a rough match/similarity indicator, or at minimum confirmation that audio was detected) before marking it complete. The goal is to remove the ability to mark this done without speaking at all.
+
+TASK 4 — "Learn 10 new words":
+- Replace the passive "tap through" format with an active interaction: either flashcard-style swiping (word front, tap or swipe to reveal meaning) followed by a quick recall check, or a short multiple-choice quiz (show the word, user picks the correct meaning from 3-4 options) before the word counts as "learned". Passive tapping alone should not complete this task.
+
+GENERAL:
+- None of these tasks should be completable through a single tap that doesn't require the user to actually engage (speak, listen, or recall). Effort should be proportional to the coins/reward given.
+- Keep the existing visual style (soft rounded cards, purple/orange accent colors, coin rewards) — this is about making the interactions themselves meaningful, not a visual redesign.
+
+After implementing, list out exactly what user action is now required to complete each of the 4 tasks, so I can confirm none of them can be gamed with a single fake tap.
