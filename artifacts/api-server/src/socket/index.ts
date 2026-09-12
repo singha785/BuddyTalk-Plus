@@ -307,8 +307,28 @@ export function initSocket(httpServer: HttpServer) {
       io.to(data.to).emit("ice_candidate", { from: socket.id, candidate: data.candidate });
     });
     socket.on("call_ended", (data: { to: string }) => {
-      io.to(data.to).emit("call_ended", { from: socket.id });
-    });
+  const caller = connected.get(socket.id);
+  const partner = connected.get(data.to);
+
+  io.to(data.to).emit("call_ended", { from: socket.id });
+
+  if (caller?.inCallWith === data.to) {
+    caller.inCallWith = null;
+    caller.status = caller.wantsCalls ? "live" : "away";
+    broadcastPresence(caller.userId, caller.status);
+  }
+
+  if (partner?.inCallWith === socket.id) {
+    partner.inCallWith = null;
+    partner.status = partner.wantsCalls ? "live" : "away";
+    broadcastPresence(partner.userId, partner.status);
+  }
+
+  logger.info(
+    { callerId: caller?.userId, partnerId: partner?.userId },
+    "Call ended — server state cleared",
+  );
+});
 
     // ── Disconnect ───────────────────────────────────────────────────────────
     socket.on("disconnect", () => {
