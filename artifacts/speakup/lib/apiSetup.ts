@@ -36,8 +36,9 @@ export function configureApiClient(): void {
       setBaseUrl(null);
     }
   } else {
-    setBaseUrl("/api");
+    setBaseUrl(__DEV__ ? "http://localhost:8080/api" : "/api");
   }
 
   setAuthTokenGetter(() => getAuthToken());
 }
+

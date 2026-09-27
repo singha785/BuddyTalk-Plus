@@ -1,8 +1,9 @@
-import { Feather } from "@expo/vector-icons";
+﻿import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
+import AvatarViewer from "@/components/AvatarViewer";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,8 +16,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
+import { LANGUAGE_OPTIONS } from "@/components/LanguageSelector";
 import { Pressable } from "@/components/Pressable";
-import { useApp, UserGoal, UserLevel } from "@/context/AppContext";
+import { useApp, AppLanguage, UserGoal, UserLevel } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 const GOALS: { id: UserGoal; label: string; sub: string; icon: React.ComponentProps<typeof Feather>["name"] }[] = [
@@ -35,15 +37,16 @@ const LEVELS: { id: UserLevel; label: string; sub: string; emoji: string }[] = [
 export default function Onboarding() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { completeOnboarding } = useApp();
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const { completeOnboarding, setLanguage } = useApp();
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [language, setSelectedLanguage] = useState<AppLanguage | null>(null);
   const [name, setName] = useState<string>("");
   const [goal, setGoal] = useState<UserGoal | null>(null);
   const [level, setLevel] = useState<UserLevel | null>(null);
 
   const next = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-    setStep((s) => (s < 3 ? ((s + 1) as 0 | 1 | 2 | 3) : s));
+    setStep((s) => (s < 4 ? ((s + 1) as 0 | 1 | 2 | 3 | 4) : s));
   };
 
   const finish = async () => {
@@ -57,9 +60,10 @@ export default function Onboarding() {
 
   const canContinue =
     (step === 0) ||
-    (step === 1 && name.trim().length >= 1) ||
-    (step === 2 && goal !== null) ||
-    (step === 3 && level !== null);
+    (step === 1 && language !== null) ||
+    (step === 2 && name.trim().length > 0) ||
+    (step === 3 && goal !== null) ||
+    (step === 4 && level !== null);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -88,7 +92,7 @@ export default function Onboarding() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.progressRow}>
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <View
                 key={i}
                 style={{
@@ -105,6 +109,7 @@ export default function Onboarding() {
 
           {step === 0 ? (
             <View style={{ marginTop: 60, paddingHorizontal: 6 }}>
+              <AvatarViewer speaking={false} style={{ height: 220, marginBottom: -10 }} />
               <Text style={styles.heroEyebrow}>BuddyTalk+</Text>
               <Text style={styles.heroTitle}>
                 Speak English{"\n"}with confidence.
@@ -126,12 +131,94 @@ export default function Onboarding() {
                   fontSize: 13,
                 }}
               >
-                Free 20 minutes daily • No credit card
+                Free 20 minutes daily â€¢ No credit card
               </Text>
             </View>
           ) : null}
 
           {step === 1 ? (
+            <View style={{ marginTop: 40 }}>
+              <Text style={styles.stepTitle}>Choose your language</Text>
+              <Text style={styles.stepSub}>
+                Choose the language you want BuddyTalk+ to use for app instructions and AI guidance.
+              </Text>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={{ marginTop: 22, maxHeight: 420 }}
+                contentContainerStyle={{ gap: 10, paddingBottom: 8 }}
+              >
+                {LANGUAGE_OPTIONS.map((option) => {
+                  const selected = language === option.id;
+
+                  return (
+                    <Pressable
+                      key={option.id}
+                      onPress={() => setSelectedLanguage(option.id)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: selected ? colors.primary : colors.border,
+                        backgroundColor: selected
+                          ? colors.primary + "12"
+                          : colors.card,
+                        borderRadius: 16,
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontFamily: "Inter_600SemiBold",
+                            fontSize: 16,
+                            color: colors.foreground,
+                          }}
+                        >
+                          {option.nativeLabel}
+                        </Text>
+                        <Text
+                          style={{
+                            marginTop: 3,
+                            fontFamily: "Inter_400Regular",
+                            fontSize: 13,
+                            color: colors.mutedForeground,
+                          }}
+                        >
+                          {option.label}
+                        </Text>
+                      </View>
+
+                      {selected ? (
+                        <Feather
+                          name="check-circle"
+                          size={22}
+                          color={colors.primary}
+                        />
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              <View style={{ marginTop: 20 }}>
+                <Button
+                  label="Continue"
+                  icon="arrow-right"
+                  onPress={async () => {
+                    if (language) await setLanguage(language);
+                    next();
+                  }}
+                  disabled={!canContinue}
+                  fullWidth
+                  size="lg"
+                />
+              </View>
+            </View>
+          ) : null}
+          {step === 2 ? (
             <View style={{ marginTop: 60 }}>
               <Text style={styles.stepTitle}>What should we call you?</Text>
               <Text style={styles.stepSub}>
@@ -168,10 +255,10 @@ export default function Onboarding() {
             </View>
           ) : null}
 
-          {step === 2 ? (
+          {step === 3 ? (
             <View style={{ marginTop: 40 }}>
               <Text style={styles.stepTitle}>Why are you learning?</Text>
-              <Text style={styles.stepSub}>Pick one — you can change later.</Text>
+              <Text style={styles.stepSub}>Pick one â€” you can change later.</Text>
               <View style={{ gap: 12, marginTop: 24 }}>
                 {GOALS.map((g) => {
                   const active = goal === g.id;
@@ -244,7 +331,7 @@ export default function Onboarding() {
             </View>
           ) : null}
 
-          {step === 3 ? (
+          {step === 4 ? (
             <View style={{ marginTop: 40 }}>
               <Text style={styles.stepTitle}>How well do you speak?</Text>
               <Text style={styles.stepSub}>
@@ -353,3 +440,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+
+
+
+
+
+
+
+
+
+
+
+

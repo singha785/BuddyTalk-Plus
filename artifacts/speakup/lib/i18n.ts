@@ -1,0 +1,198 @@
+﻿import type { AppLanguage } from "@/context/AppContext";
+
+export const LANGUAGE_NAMES: Record<AppLanguage, string> = {
+  en: "English",
+  hi: "हिन्दी",
+  bn: "বাংলা",
+  mr: "मराठी",
+  te: "తెలుగు",
+  ta: "தமிழ்",
+  kn: "ಕನ್ನಡ",
+  ml: "മലയാളം",
+  gu: "ગુજરાતી",
+  or: "ଓଡ଼ିଆ",
+  pa: "ਪੰਜਾਬੀ",
+  as: "অসমীয়া",
+  ur: "اردو",
+  th: "ไทย",
+};
+
+type TranslationKey =
+  | "continue"
+  | "back"
+  | "language"
+  | "home"
+  | "learn"
+  | "talks"
+  | "profile"
+  | "online" | "offline" | "buddiesLive" | "warmingUp" | "speakEnglishEarnConfidence" | "freeMinutesLeft" | "startFreeCall"
+  | "todaysTalkTime" | "tasks" | "mentors" | "lessons" | "wallet"
+  | "liveMentors" | "seeAll" | "live" | "todaysMissions" | "allMissionsDone" | "comeBackTomorrow"
+  | "aiCoach" | "quickWarmUp" | "recommendedLessons" | "browse" | "yourGrowth" | "calls" | "mins" | "thisWeek" | "noDataYet" | "completePracticeToTrack"
+  | "fluency" | "pronunciation" | "confidence" | "learningProgress" | "lessonsDone" | "keepPracticing" | "situationalTalks" | "realLifeTalks" | "talk" | "talksCount" | "englishHindi" | "listenRepeatRecord" | "all" | "beginner" | "intermediate" | "advanced" | "minutes";
+
+const TRANSLATIONS: Record<AppLanguage, Record<TranslationKey, string>> = {
+  en: {
+    continue:"Continue",back:"Back",language:"Language",home:"Home",learn:"Learn",talks:"Talks",profile:"Profile",
+    online:"Online",offline:"Offline",buddiesLive:"BUDDIES LIVE NOW",warmingUp:"WARMING UP THE LINE",
+    speakEnglishEarnConfidence:"Speak English. Earn confidence.",freeMinutesLeft:"free minutes left today · Tap to start a live call",startFreeCall:"Start a free call",
+    todaysTalkTime:"TODAY'S TALK TIME",tasks:"Tasks",mentors:"Mentors",lessons:"Lessons",wallet:"Wallet",
+    liveMentors:"Live mentors right now",seeAll:"See all",live:"LIVE",todaysMissions:"Today's missions",allMissionsDone:"All missions done!",comeBackTomorrow:"Come back tomorrow for new ones — your streak is safe.",
+    aiCoach:"Your AI coach",quickWarmUp:"Quick warm-up",recommendedLessons:"Recommended lessons",browse:"Browse",
+    yourGrowth:"Your growth",calls:"Calls",mins:"Mins",thisWeek:"This week",noDataYet:"No data yet",completePracticeToTrack:"Complete a practice call or lesson to start tracking your fluency, pronunciation, and confidence.",
+    fluency:"Fluency",pronunciation:"Pronunciation",confidence:"Confidence",learningProgress:"Your learning progress",lessonsDone:"lessons done",keepPracticing:"Keep practicing a little every day.",situationalTalks:"Situational Talks",realLifeTalks:"Learn what to say in real-life situations.",talk:"Talk",talksCount:"Talks",englishHindi:"English + Hindi",listenRepeatRecord:"Listen, repeat, record and improve your pronunciation.",all:"All",beginner:"Beginner",intermediate:"Intermediate",advanced:"Advanced",minutes:"min"
+  },
+  hi: {
+    continue:"जारी रखें",back:"वापस",language:"भाषा",home:"होम",learn:"सीखें",talks:"बातचीत",profile:"प्रोफ़ाइल",
+    online:"ऑनलाइन",offline:"ऑफ़लाइन",buddiesLive:"दोस्त अभी लाइव हैं",warmingUp:"कनेक्शन तैयार हो रहा है",
+    speakEnglishEarnConfidence:"अंग्रेज़ी बोलें। आत्मविश्वास बढ़ाएँ।",freeMinutesLeft:"आज के मुफ़्त मिनट बाकी · लाइव कॉल शुरू करने के लिए टैप करें",startFreeCall:"मुफ़्त कॉल शुरू करें",
+    todaysTalkTime:"आज का बातचीत समय",tasks:"टास्क",mentors:"मेंटर्स",lessons:"लेसन",wallet:"वॉलेट",
+    liveMentors:"अभी लाइव मेंटर्स",seeAll:"सभी देखें",live:"लाइव",todaysMissions:"आज के मिशन",allMissionsDone:"आज के सभी मिशन पूरे!",comeBackTomorrow:"नए मिशन के लिए कल वापस आएँ — आपकी स्ट्रीक सुरक्षित है।",
+    aiCoach:"आपका AI कोच",quickWarmUp:"क्विक वार्म-अप",recommendedLessons:"सुझाए गए लेसन",browse:"देखें",
+    yourGrowth:"आपकी प्रगति",calls:"कॉल",mins:"मिनट",thisWeek:"इस सप्ताह",noDataYet:"अभी कोई डेटा नहीं",completePracticeToTrack:"अपनी फ्लुएंसी, उच्चारण और आत्मविश्वास की प्रगति देखने के लिए कोई प्रैक्टिस कॉल या लेसन पूरा करें।",
+    fluency:"फ्लुएंसी",pronunciation:"उच्चारण",confidence:"आत्मविश्वास",learningProgress:"आपकी सीखने की प्रगति",lessonsDone:"लेसन पूरे",keepPracticing:"हर दिन थोड़ा अभ्यास करते रहें।",situationalTalks:"स्थितिजन्य बातचीत",realLifeTalks:"वास्तविक जीवन की परिस्थितियों में क्या बोलना है, सीखें।",talk:"बातचीत",talksCount:"बातचीत",englishHindi:"अंग्रेज़ी + हिन्दी",listenRepeatRecord:"सुनें, दोहराएँ, रिकॉर्ड करें और अपने उच्चारण में सुधार करें।",all:"सभी",beginner:"शुरुआती",intermediate:"मध्यवर्ती",advanced:"उन्नत",minutes:"मिनट"
+  },
+  bn: {
+    continue:"চালিয়ে যান",back:"পিছনে",language:"ভাষা",home:"হোম",learn:"শিখুন",talks:"কথোপকথন",profile:"প্রোফাইল",
+    online:"অনলাইন",offline:"অফলাইন",buddiesLive:"বন্ধুরা এখন লাইভ",warmingUp:"লাইন প্রস্তুত হচ্ছে",
+    speakEnglishEarnConfidence:"ইংরেজিতে কথা বলুন। আত্মবিশ্বাস বাড়ান।",freeMinutesLeft:"আজকের ফ্রি মিনিট বাকি · লাইভ কল শুরু করতে ট্যাপ করুন",startFreeCall:"ফ্রি কল শুরু করুন",
+    todaysTalkTime:"আজকের কথা বলার সময়",tasks:"টাস্ক",mentors:"মেন্টর",lessons:"লেসন",wallet:"ওয়ালেট",
+    liveMentors:"এই মুহূর্তে লাইভ মেন্টর",seeAll:"সব দেখুন",live:"লাইভ",todaysMissions:"আজকের মিশন",allMissionsDone:"আজকের সব মিশন সম্পন্ন!",comeBackTomorrow:"নতুন মিশনের জন্য আগামীকাল ফিরে আসুন।",
+    aiCoach:"আপনার AI কোচ",quickWarmUp:"কুইক ওয়ার্ম-আপ",recommendedLessons:"প্রস্তাবিত লেসন",browse:"দেখুন",
+    yourGrowth:"আপনার অগ্রগতি",calls:"কল",mins:"মিনিট",thisWeek:"এই সপ্তাহ",noDataYet:"এখনও কোনো ডেটা নেই",completePracticeToTrack:"ফ্লুয়েন্সি, উচ্চারণ এবং আত্মবিশ্বাসের অগ্রগতি দেখতে একটি প্র্যাকটিস কল বা লেসন সম্পূর্ণ করুন।",
+    fluency:"ফ্লুয়েন্সি",pronunciation:"উচ্চারণ",confidence:"আত্মবিশ্বাস",learningProgress:"আপনার শেখার অগ্রগতি",lessonsDone:"লেসন সম্পন্ন",keepPracticing:"প্রতিদিন একটু করে অনুশীলন করুন।",situationalTalks:"পরিস্থিতিভিত্তিক কথোপকথন",realLifeTalks:"বাস্তব জীবনের পরিস্থিতিতে কী বলতে হয় তা শিখুন।",talk:"কথোপকথন",talksCount:"কথোপকথন",englishHindi:"ইংরেজি + হিন্দি",listenRepeatRecord:"শুনুন, পুনরাবৃত্তি করুন, রেকর্ড করুন এবং উচ্চারণ উন্নত করুন।",all:"সব",beginner:"শিক্ষানবিস",intermediate:"মধ্যবর্তী",advanced:"উন্নত",minutes:"মিনিট"
+  },
+  mr: {
+    continue:"पुढे जा",back:"मागे",language:"भाषा",home:"होम",learn:"शिका",talks:"संभाषण",profile:"प्रोफाइल",
+    online:"ऑनलाइन",offline:"ऑफलाइन",buddiesLive:"मित्र आत्ता लाईव्ह आहेत",warmingUp:"कनेक्शन तयार होत आहे",
+    speakEnglishEarnConfidence:"इंग्रजी बोला. आत्मविश्वास वाढवा.",freeMinutesLeft:"आजचे मोफत मिनिटे बाकी · लाईव्ह कॉल सुरू करण्यासाठी टॅप करा",startFreeCall:"मोफत कॉल सुरू करा",
+    todaysTalkTime:"आजचा बोलण्याचा वेळ",tasks:"टास्क",mentors:"मेंटर्स",lessons:"लेसन",wallet:"वॉलेट",
+    liveMentors:"आत्ता लाईव्ह मेंटर्स",seeAll:"सर्व पहा",live:"लाईव्ह",todaysMissions:"आजची मिशन्स",allMissionsDone:"आजची सर्व मिशन्स पूर्ण!",comeBackTomorrow:"नवीन मिशन्ससाठी उद्या परत या.",
+    aiCoach:"तुमचा AI कोच",quickWarmUp:"क्विक वॉर्म-अप",recommendedLessons:"शिफारस केलेले लेसन",browse:"पहा",
+    yourGrowth:"तुमची प्रगती",calls:"कॉल",mins:"मिनिटे",thisWeek:"या आठवड्यात",noDataYet:"अजून डेटा नाही",completePracticeToTrack:"फ्लुएंसी, उच्चार आणि आत्मविश्वासाची प्रगती पाहण्यासाठी प्रॅक्टिस कॉल किंवा लेसन पूर्ण करा.",
+    fluency:"फ्लुएंसी",pronunciation:"उच्चार",confidence:"आत्मविश्वास",learningProgress:"तुमची शिकण्याची प्रगती",lessonsDone:"लेसन पूर्ण",keepPracticing:"दररोज थोडा सराव करत राहा.",situationalTalks:"परिस्थितीनुसार संभाषण",realLifeTalks:"वास्तविक जीवनातील परिस्थितींमध्ये काय बोलायचे ते शिका.",talk:"संभाषण",talksCount:"संभाषणे",englishHindi:"इंग्रजी + हिंदी",listenRepeatRecord:"ऐका, पुन्हा बोला, रेकॉर्ड करा आणि तुमच्या उच्चारात सुधारणा करा.",all:"सर्व",beginner:"नवशिक्या",intermediate:"मध्यम",advanced:"प्रगत",minutes:"मिनिटे"
+  },
+  te: {
+    continue:"కొనసాగించండి",back:"వెనుకకు",language:"భాష",home:"హోమ్",learn:"నేర్చుకోండి",talks:"సంభాషణలు",profile:"ప్రొఫైల్",
+    online:"ఆన్‌లైన్",offline:"ఆఫ్‌లైన్",buddiesLive:"స్నేహితులు లైవ్‌లో ఉన్నారు",warmingUp:"కనెక్షన్ సిద్ధమవుతోంది",
+    speakEnglishEarnConfidence:"ఇంగ్లీష్ మాట్లాడండి. ఆత్మవిశ్వాసాన్ని పెంచుకోండి.",freeMinutesLeft:"ఈరోజు ఉచిత నిమిషాలు మిగిలి ఉన్నాయి · లైవ్ కాల్ ప్రారంభించడానికి ట్యాప్ చేయండి",startFreeCall:"ఉచిత కాల్ ప్రారంభించండి",
+    todaysTalkTime:"ఈరోజు మాట్లాడిన సమయం",tasks:"టాస్క్‌లు",mentors:"మెంటర్లు",lessons:"లెసన్స్",wallet:"వాలెట్",
+    liveMentors:"ప్రస్తుతం లైవ్ మెంటర్లు",seeAll:"అన్నీ చూడండి",live:"లైవ్",todaysMissions:"ఈరోజు మిషన్లు",allMissionsDone:"ఈరోజు అన్ని మిషన్లు పూర్తయ్యాయి!",comeBackTomorrow:"కొత్త మిషన్ల కోసం రేపు తిరిగి రండి.",
+    aiCoach:"మీ AI కోచ్",quickWarmUp:"క్విక్ వార్మ్-అప్",recommendedLessons:"సిఫార్సు చేసిన లెసన్స్",browse:"చూడండి",
+    yourGrowth:"మీ పురోగతి",calls:"కాల్స్",mins:"నిమిషాలు",thisWeek:"ఈ వారం",noDataYet:"ఇంకా డేటా లేదు",completePracticeToTrack:"ఫ్లూయెన్సీ, ఉచ్చారణ మరియు ఆత్మవిశ్వాసం పురోగతిని ట్రాక్ చేయడానికి ప్రాక్టీస్ కాల్ లేదా లెసన్ పూర్తి చేయండి.",
+    fluency:"ఫ్లూయెన్సీ",pronunciation:"ఉచ్చారణ",confidence:"ఆత్మవిశ్వాసం",learningProgress:"మీ అభ్యాస పురోగతి",lessonsDone:"లెసన్స్ పూర్తయ్యాయి",keepPracticing:"ప్రతిరోజూ కొద్దిగా సాధన చేస్తూ ఉండండి.",situationalTalks:"పరిస్థితుల ఆధారిత సంభాషణలు",realLifeTalks:"నిజ జీవిత పరిస్థితుల్లో ఏమి మాట్లాడాలో నేర్చుకోండి.",talk:"సంభాషణ",talksCount:"సంభాషణలు",englishHindi:"ఇంగ్లీష్ + హిందీ",listenRepeatRecord:"వినండి, పునరావృతం చేయండి, రికార్డ్ చేయండి మరియు మీ ఉచ్చారణను మెరుగుపరచండి.",all:"అన్నీ",beginner:"ప్రారంభ స్థాయి",intermediate:"మధ్యస్థ",advanced:"అధునాతన",minutes:"నిమిషాలు"
+  },
+  ta: {
+    continue:"தொடரவும்",back:"பின்செல்",language:"மொழி",home:"முகப்பு",learn:"கற்கவும்",talks:"உரையாடல்கள்",profile:"சுயவிவரம்",
+    online:"ஆன்லைன்",offline:"ஆஃப்லைன்",buddiesLive:"நண்பர்கள் இப்போது லைவ்",warmingUp:"இணைப்பு தயாராகிறது",
+    speakEnglishEarnConfidence:"ஆங்கிலம் பேசுங்கள். தன்னம்பிக்கையை வளர்த்துக்கொள்ளுங்கள்.",freeMinutesLeft:"இன்றைய இலவச நிமிடங்கள் மீதம் · லைவ் அழைப்பைத் தொடங்க தட்டவும்",startFreeCall:"இலவச அழைப்பைத் தொடங்கு",
+    todaysTalkTime:"இன்றைய பேச்சு நேரம்",tasks:"பணிகள்",mentors:"மென்டர்கள்",lessons:"பாடங்கள்",wallet:"வாலெட்",
+    liveMentors:"இப்போது லைவ் மென்டர்கள்",seeAll:"அனைத்தையும் பார்க்க",live:"லைவ்",todaysMissions:"இன்றைய பணிகள்",allMissionsDone:"இன்றைய அனைத்து பணிகளும் முடிந்தது!",comeBackTomorrow:"புதிய பணிகளுக்காக நாளை மீண்டும் வாருங்கள்.",
+    aiCoach:"உங்கள் AI கோச்",quickWarmUp:"விரைவு வார்ம்-அப்",recommendedLessons:"பரிந்துரைக்கப்பட்ட பாடங்கள்",browse:"பார்க்க",
+    yourGrowth:"உங்கள் முன்னேற்றம்",calls:"அழைப்புகள்",mins:"நிமிடங்கள்",thisWeek:"இந்த வாரம்",noDataYet:"இன்னும் தரவு இல்லை",completePracticeToTrack:"உங்கள் பேச்சுத்திறன், உச்சரிப்பு மற்றும் தன்னம்பிக்கை முன்னேற்றத்தை கண்காணிக்க ஒரு பயிற்சி அழைப்பு அல்லது பாடத்தை முடிக்கவும்.",
+    fluency:"பேச்சுத்திறன்",pronunciation:"உச்சரிப்பு",confidence:"தன்னம்பிக்கை",learningProgress:"உங்கள் கற்றல் முன்னேற்றம்",lessonsDone:"பாடங்கள் முடிந்தது",keepPracticing:"ஒவ்வொரு நாளும் சிறிது பயிற்சி செய்யுங்கள்.",situationalTalks:"சூழ்நிலை உரையாடல்கள்",realLifeTalks:"நிஜ வாழ்க்கை சூழ்நிலைகளில் என்ன பேச வேண்டும் என்பதை கற்றுக்கொள்ளுங்கள்.",talk:"உரையாடல்",talksCount:"உரையாடல்கள்",englishHindi:"ஆங்கிலம் + இந்தி",listenRepeatRecord:"கேளுங்கள், மீண்டும் சொல்லுங்கள், பதிவு செய்யுங்கள், உங்கள் உச்சரிப்பை மேம்படுத்துங்கள்.",all:"அனைத்தும்",beginner:"தொடக்கநிலை",intermediate:"இடைநிலை",advanced:"மேம்பட்ட",minutes:"நிமிடங்கள்"
+  },
+  kn: {
+    continue:"ಮುಂದುವರಿಸಿ",back:"ಹಿಂದಕ್ಕೆ",language:"ಭಾಷೆ",home:"ಮುಖಪುಟ",learn:"ಕಲಿಯಿರಿ",talks:"ಮಾತುಕತೆ",profile:"ಪ್ರೊಫೈಲ್",
+    online:"ಆನ್‌ಲೈನ್",offline:"ಆಫ್‌ಲೈನ್",buddiesLive:"ಸ್ನೇಹಿತರು ಈಗ ಲೈವ್",warmingUp:"ಕನೆಕ್ಷನ್ ಸಿದ್ಧವಾಗುತ್ತಿದೆ",
+    speakEnglishEarnConfidence:"ಇಂಗ್ಲಿಷ್ ಮಾತನಾಡಿ. ಆತ್ಮವಿಶ್ವಾಸ ಬೆಳೆಸಿಕೊಳ್ಳಿ.",freeMinutesLeft:"ಇಂದಿನ ಉಚಿತ ನಿಮಿಷಗಳು ಬಾಕಿ · ಲೈವ್ ಕಾಲ್ ಪ್ರಾರಂಭಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ",startFreeCall:"ಉಚಿತ ಕಾಲ್ ಪ್ರಾರಂಭಿಸಿ",
+    todaysTalkTime:"ಇಂದಿನ ಮಾತನಾಡಿದ ಸಮಯ",tasks:"ಟಾಸ್ಕ್‌ಗಳು",mentors:"ಮೆಂಟರ್‌ಗಳು",lessons:"ಪಾಠಗಳು",wallet:"ವಾಲೆಟ್",
+    liveMentors:"ಈಗ ಲೈವ್ ಮೆಂಟರ್‌ಗಳು",seeAll:"ಎಲ್ಲವನ್ನೂ ನೋಡಿ",live:"ಲೈವ್",todaysMissions:"ಇಂದಿನ ಮಿಷನ್‌ಗಳು",allMissionsDone:"ಇಂದಿನ ಎಲ್ಲಾ ಮಿಷನ್‌ಗಳು ಪೂರ್ಣ!",comeBackTomorrow:"ಹೊಸ ಮಿಷನ್‌ಗಳಿಗಾಗಿ ನಾಳೆ ಮತ್ತೆ ಬನ್ನಿ.",
+    aiCoach:"ನಿಮ್ಮ AI ಕೋಚ್",quickWarmUp:"ಕ್ವಿಕ್ ವಾರ್ಮ್-ಅಪ್",recommendedLessons:"ಶಿಫಾರಸು ಮಾಡಿದ ಪಾಠಗಳು",browse:"ನೋಡಿ",
+    yourGrowth:"ನಿಮ್ಮ ಪ್ರಗತಿ",calls:"ಕಾಲ್‌ಗಳು",mins:"ನಿಮಿಷಗಳು",thisWeek:"ಈ ವಾರ",noDataYet:"ಇನ್ನೂ ಡೇಟಾ ಇಲ್ಲ",completePracticeToTrack:"ಫ್ಲುಯೆನ್ಸಿ, ಉಚ್ಚಾರಣೆ ಮತ್ತು ಆತ್ಮವಿಶ್ವಾಸದ ಪ್ರಗತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಪ್ರಾಕ್ಟೀಸ್ ಕಾಲ್ ಅಥವಾ ಪಾಠವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ.",
+    fluency:"ಫ್ಲುಯೆನ್ಸಿ",pronunciation:"ಉಚ್ಚಾರಣೆ",confidence:"ಆತ್ಮವಿಶ್ವಾಸ",learningProgress:"ನಿಮ್ಮ ಕಲಿಕೆಯ ಪ್ರಗತಿ",lessonsDone:"ಪಾಠಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ",keepPracticing:"ಪ್ರತಿದಿನ ಸ್ವಲ್ಪ ಅಭ್ಯಾಸ ಮಾಡುತ್ತಿರಿ.",situationalTalks:"ಪರಿಸ್ಥಿತಿ ಆಧಾರಿತ ಮಾತುಕತೆಗಳು",realLifeTalks:"ನಿಜ ಜೀವನದ ಸಂದರ್ಭಗಳಲ್ಲಿ ಏನು ಮಾತನಾಡಬೇಕು ಎಂಬುದನ್ನು ಕಲಿಯಿರಿ.",talk:"ಮಾತುಕತೆ",talksCount:"ಮಾತುಕತೆಗಳು",englishHindi:"ಇಂಗ್ಲಿಷ್ + ಹಿಂದಿ",listenRepeatRecord:"ಕೇಳಿ, ಪುನರಾವರ್ತಿಸಿ, ರೆಕಾರ್ಡ್ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಉಚ್ಚಾರಣೆಯನ್ನು ಸುಧಾರಿಸಿ.",all:"ಎಲ್ಲಾ",beginner:"ಆರಂಭಿಕ",intermediate:"ಮಧ್ಯಮ",advanced:"ಮುಂದುವರಿದ",minutes:"ನಿಮಿಷಗಳು"
+  },
+  ml: {
+    continue:"തുടരുക",back:"പിന്നിലേക്ക്",language:"ഭാഷ",home:"ഹോം",learn:"പഠിക്കുക",talks:"സംഭാഷണങ്ങൾ",profile:"പ്രൊഫൈൽ",
+    online:"ഓൺലൈൻ",offline:"ഓഫ്‌ലൈൻ",buddiesLive:"സുഹൃത്തുക്കൾ ഇപ്പോൾ ലൈവിലാണ്",warmingUp:"കണക്ഷൻ തയ്യാറാകുന്നു",
+    speakEnglishEarnConfidence:"ഇംഗ്ലീഷ് സംസാരിക്കൂ. ആത്മവിശ്വാസം വളർത്തൂ.",freeMinutesLeft:"ഇന്നത്തെ സൗജന്യ മിനിറ്റുകൾ ബാക്കി · ലൈവ് കോൾ ആരംഭിക്കാൻ ടാപ്പ് ചെയ്യുക",startFreeCall:"സൗജന്യ കോൾ ആരംഭിക്കുക",
+    todaysTalkTime:"ഇന്നത്തെ സംസാര സമയം",tasks:"ടാസ്കുകൾ",mentors:"മെന്റർമാർ",lessons:"പാഠങ്ങൾ",wallet:"വാലറ്റ്",
+    liveMentors:"ഇപ്പോൾ ലൈവ് മെന്റർമാർ",seeAll:"എല്ലാം കാണുക",live:"ലൈവ്",todaysMissions:"ഇന്നത്തെ മിഷനുകൾ",allMissionsDone:"ഇന്നത്തെ എല്ലാ മിഷനുകളും പൂർത്തിയായി!",comeBackTomorrow:"പുതിയ മിഷനുകൾക്കായി നാളെ വീണ്ടും വരൂ.",
+    aiCoach:"നിങ്ങളുടെ AI കോച്ച്",quickWarmUp:"ക്വിക്ക് വാം-അപ്പ്",recommendedLessons:"ശുപാർശ ചെയ്ത പാഠങ്ങൾ",browse:"കാണുക",
+    yourGrowth:"നിങ്ങളുടെ പുരോഗതി",calls:"കോളുകൾ",mins:"മിനിറ്റുകൾ",thisWeek:"ഈ ആഴ്ച",noDataYet:"ഇതുവരെ ഡാറ്റയില്ല",completePracticeToTrack:"ഫ്ലുവൻസി, ഉച്ചാരണം, ആത്മവിശ്വാസം എന്നിവയുടെ പുരോഗതി ട്രാക്ക് ചെയ്യാൻ ഒരു പ്രാക്ടീസ് കോൾ അല്ലെങ്കിൽ പാഠം പൂർത്തിയാക്കുക.",
+    fluency:"ഫ്ലുവൻസി",pronunciation:"ഉച്ചാരണം",confidence:"ആത്മവിശ്വാസം",learningProgress:"നിങ്ങളുടെ പഠന പുരോഗതി",lessonsDone:"പാഠങ്ങൾ പൂർത്തിയായി",keepPracticing:"എല്ലാ ദിവസവും കുറച്ച് പരിശീലനം തുടരുക.",situationalTalks:"സാഹചര്യ സംഭാഷണങ്ങൾ",realLifeTalks:"യഥാർത്ഥ ജീവിത സാഹചര്യങ്ങളിൽ എന്ത് പറയണമെന്ന് പഠിക്കുക.",talk:"സംഭാഷണം",talksCount:"സംഭാഷണങ്ങൾ",englishHindi:"ഇംഗ്ലീഷ് + ഹിന്ദി",listenRepeatRecord:"കേൾക്കുക, ആവർത്തിക്കുക, റെക്കോർഡ് ചെയ്യുക, നിങ്ങളുടെ ഉച്ചാരണം മെച്ചപ്പെടുത്തുക.",all:"എല്ലാം",beginner:"തുടക്കക്കാരൻ",intermediate:"ഇടത്തരം",advanced:"വിപുലമായ",minutes:"മിനിറ്റ്"
+  },
+  gu: {
+    continue:"ચાલુ રાખો",back:"પાછળ",language:"ભાષા",home:"હોમ",learn:"શીખો",talks:"વાતચીત",profile:"પ્રોફાઇલ",
+    online:"ઓનલાઇન",offline:"ઓફલાઇન",buddiesLive:"મિત્રો અત્યારે લાઇવ છે",warmingUp:"કનેક્શન તૈયાર થઈ રહ્યું છે",
+    speakEnglishEarnConfidence:"અંગ્રેજી બોલો. આત્મવિશ્વાસ વધારો.",freeMinutesLeft:"આજની મફત મિનિટો બાકી · લાઇવ કૉલ શરૂ કરવા ટેપ કરો",startFreeCall:"મફત કૉલ શરૂ કરો",
+    todaysTalkTime:"આજનો વાતચીત સમય",tasks:"ટાસ્ક",mentors:"મેન્ટર્સ",lessons:"લેસન",wallet:"વૉલેટ",
+    liveMentors:"હમણાં લાઇવ મેન્ટર્સ",seeAll:"બધું જુઓ",live:"લાઇવ",todaysMissions:"આજના મિશન",allMissionsDone:"આજના બધા મિશન પૂર્ણ!",comeBackTomorrow:"નવા મિશન માટે આવતીકાલે પાછા આવો.",
+    aiCoach:"તમારો AI કોચ",quickWarmUp:"ક્વિક વોર્મ-અપ",recommendedLessons:"ભલામણ કરેલા લેસન",browse:"જુઓ",
+    yourGrowth:"તમારી પ્રગતિ",calls:"કૉલ્સ",mins:"મિનિટ",thisWeek:"આ અઠવાડિયે",noDataYet:"હજુ ડેટા નથી",completePracticeToTrack:"ફ્લુએન્સી, ઉચ્ચાર અને આત્મવિશ્વાસની પ્રગતિ ટ્રેક કરવા પ્રેક્ટિસ કૉલ અથવા લેસન પૂર્ણ કરો.",
+    fluency:"ફ્લુએન્સી",pronunciation:"ઉચ્ચાર",confidence:"આત્મવિશ્વાસ",learningProgress:"તમારી શીખવાની પ્રગતિ",lessonsDone:"લેસન પૂર્ણ થયા",keepPracticing:"દરરોજ થોડો અભ્યાસ કરતા રહો.",situationalTalks:"પરિસ્થિતિ આધારિત વાતચીત",realLifeTalks:"વાસ્તવિક જીવનની પરિસ્થિતિઓમાં શું બોલવું તે શીખો.",talk:"વાતચીત",talksCount:"વાતચીતો",englishHindi:"અંગ્રેજી + હિન્દી",listenRepeatRecord:"સાંભળો, ફરી બોલો, રેકોર્ડ કરો અને તમારા ઉચ્ચારને સુધારો.",all:"બધા",beginner:"શરૂઆતનું સ્તર",intermediate:"મધ્યમ",advanced:"અદ્યતન",minutes:"મિનિટ"
+  },
+  or: {
+    continue:"ଜାରି ରଖନ୍ତୁ",back:"ପଛକୁ",language:"ଭାଷା",home:"ହୋମ",learn:"ଶିଖନ୍ତୁ",talks:"କଥାବାର୍ତ୍ତା",profile:"ପ୍ରୋଫାଇଲ୍",
+    online:"ଅନଲାଇନ୍",offline:"ଅଫଲାଇନ୍",buddiesLive:"ବନ୍ଧୁମାନେ ବର୍ତ୍ତମାନ ଲାଇଭ୍",warmingUp:"କନେକ୍ସନ୍ ପ୍ରସ୍ତୁତ ହେଉଛି",
+    speakEnglishEarnConfidence:"ଇଂରାଜୀ କୁହନ୍ତୁ। ଆତ୍ମବିଶ୍ୱାସ ବଢ଼ାନ୍ତୁ।",freeMinutesLeft:"ଆଜିର ମାଗଣା ମିନିଟ୍ ବାକି · ଲାଇଭ୍ କଲ୍ ଆରମ୍ଭ କରିବାକୁ ଟ୍ୟାପ୍ କରନ୍ତୁ",startFreeCall:"ମାଗଣା କଲ୍ ଆରମ୍ଭ କରନ୍ତୁ",
+    todaysTalkTime:"ଆଜିର କଥାବାର୍ତ୍ତା ସମୟ",tasks:"ଟାସ୍କ",mentors:"ମେଣ୍ଟର",lessons:"ପାଠ",wallet:"ୱାଲେଟ୍",
+    liveMentors:"ବର୍ତ୍ତମାନ ଲାଇଭ୍ ମେଣ୍ଟର",seeAll:"ସବୁ ଦେଖନ୍ତୁ",live:"ଲାଇଭ୍",todaysMissions:"ଆଜିର ମିଶନ୍",allMissionsDone:"ଆଜିର ସମସ୍ତ ମିଶନ୍ ସମ୍ପୂର୍ଣ୍ଣ!",comeBackTomorrow:"ନୂଆ ମିଶନ୍ ପାଇଁ ଆସନ୍ତାକାଲି ଫେରନ୍ତୁ।",
+    aiCoach:"ଆପଣଙ୍କ AI କୋଚ୍",quickWarmUp:"କ୍ୱିକ୍ ୱାର୍ମ୍-ଅପ୍",recommendedLessons:"ସୁପାରିଶ କରାଯାଇଥିବା ପାଠ",browse:"ଦେଖନ୍ତୁ",
+    yourGrowth:"ଆପଣଙ୍କ ପ୍ରଗତି",calls:"କଲ୍",mins:"ମିନିଟ୍",thisWeek:"ଏହି ସପ୍ତାହ",noDataYet:"ଏପର୍ଯ୍ୟନ୍ତ ଡାଟା ନାହିଁ",completePracticeToTrack:"ଫ୍ଲୁଏନ୍ସି, ଉଚ୍ଚାରଣ ଏବଂ ଆତ୍ମବିଶ୍ୱାସର ପ୍ରଗତି ଟ୍ରାକ୍ କରିବାକୁ ପ୍ରାକ୍ଟିସ୍ କଲ୍ କିମ୍ବା ପାଠ ସମାପ୍ତ କରନ୍ତୁ।",
+    fluency:"ଫ୍ଲୁଏନ୍ସି",pronunciation:"ଉଚ୍ଚାରଣ",confidence:"ଆତ୍ମବିଶ୍ୱାସ",learningProgress:"ଆପଣଙ୍କ ଶିକ୍ଷଣ ପ୍ରଗତି",lessonsDone:"ପାଠ ସମାପ୍ତ",keepPracticing:"ପ୍ରତିଦିନ ଅଳ୍ପ ଅଭ୍ୟାସ ଜାରି ରଖନ୍ତୁ।",situationalTalks:"ପରିସ୍ଥିତି ଆଧାରିତ କଥାବାର୍ତ୍ତା",realLifeTalks:"ବାସ୍ତବ ଜୀବନର ପରିସ୍ଥିତିରେ କଣ କହିବା ଉଚିତ ଶିଖନ୍ତୁ।",talk:"କଥାବାର୍ତ୍ତା",talksCount:"କଥାବାର୍ତ୍ତାଗୁଡ଼ିକ",englishHindi:"ଇଂରାଜୀ + ହିନ୍ଦୀ",listenRepeatRecord:"ଶୁଣନ୍ତୁ, ପୁନରାବୃତ୍ତି କରନ୍ତୁ, ରେକର୍ଡ କରନ୍ତୁ ଏବଂ ଆପଣଙ୍କ ଉଚ୍ଚାରଣରେ ଉନ୍ନତି କରନ୍ତୁ।",all:"ସମସ୍ତ",beginner:"ପ୍ରାରମ୍ଭିକ",intermediate:"ମଧ୍ୟମ",advanced:"ଉନ୍ନତ",minutes:"ମିନିଟ୍"
+  },
+  pa: {
+    continue:"ਜਾਰੀ ਰੱਖੋ",back:"ਵਾਪਸ",language:"ਭਾਸ਼ਾ",home:"ਹੋਮ",learn:"ਸਿੱਖੋ",talks:"ਗੱਲਬਾਤ",profile:"ਪ੍ਰੋਫਾਈਲ",
+    online:"ਆਨਲਾਈਨ",offline:"ਆਫਲਾਈਨ",buddiesLive:"ਦੋਸਤ ਹੁਣ ਲਾਈਵ ਹਨ",warmingUp:"ਕਨੈਕਸ਼ਨ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ",
+    speakEnglishEarnConfidence:"ਅੰਗਰੇਜ਼ੀ ਬੋਲੋ। ਆਤਮ-ਵਿਸ਼ਵਾਸ ਵਧਾਓ।",freeMinutesLeft:"ਅੱਜ ਦੇ ਮੁਫ਼ਤ ਮਿੰਟ ਬਾਕੀ · ਲਾਈਵ ਕਾਲ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ",startFreeCall:"ਮੁਫ਼ਤ ਕਾਲ ਸ਼ੁਰੂ ਕਰੋ",
+    todaysTalkTime:"ਅੱਜ ਦਾ ਗੱਲਬਾਤ ਸਮਾਂ",tasks:"ਟਾਸਕ",mentors:"ਮੈਂਟਰ",lessons:"ਲੇਸਨ",wallet:"ਵਾਲਿਟ",
+    liveMentors:"ਹੁਣ ਲਾਈਵ ਮੈਂਟਰ",seeAll:"ਸਭ ਦੇਖੋ",live:"ਲਾਈਵ",todaysMissions:"ਅੱਜ ਦੇ ਮਿਸ਼ਨ",allMissionsDone:"ਅੱਜ ਦੇ ਸਾਰੇ ਮਿਸ਼ਨ ਪੂਰੇ!",comeBackTomorrow:"ਨਵੇਂ ਮਿਸ਼ਨਾਂ ਲਈ ਕੱਲ੍ਹ ਵਾਪਸ ਆਓ।",
+    aiCoach:"ਤੁਹਾਡਾ AI ਕੋਚ",quickWarmUp:"ਕੁਇੱਕ ਵਾਰਮ-ਅੱਪ",recommendedLessons:"ਸਿਫ਼ਾਰਸ਼ ਕੀਤੇ ਲੇਸਨ",browse:"ਦੇਖੋ",
+    yourGrowth:"ਤੁਹਾਡੀ ਤਰੱਕੀ",calls:"ਕਾਲਾਂ",mins:"ਮਿੰਟ",thisWeek:"ਇਸ ਹਫ਼ਤੇ",noDataYet:"ਹਾਲੇ ਕੋਈ ਡਾਟਾ ਨਹੀਂ",completePracticeToTrack:"ਫਲੂਐਂਸੀ, ਉਚਾਰਣ ਅਤੇ ਆਤਮ-ਵਿਸ਼ਵਾਸ ਦੀ ਤਰੱਕੀ ਟਰੈਕ ਕਰਨ ਲਈ ਪ੍ਰੈਕਟਿਸ ਕਾਲ ਜਾਂ ਲੇਸਨ ਪੂਰਾ ਕਰੋ।",
+    fluency:"ਫਲੂਐਂਸੀ",pronunciation:"ਉਚਾਰਣ",confidence:"ਆਤਮ-ਵਿਸ਼ਵਾਸ",learningProgress:"ਤੁਹਾਡੀ ਸਿੱਖਣ ਦੀ ਤਰੱਕੀ",lessonsDone:"ਲੇਸਨ ਪੂਰੇ ਹੋਏ",keepPracticing:"ਹਰ ਰੋਜ਼ ਥੋੜ੍ਹਾ ਅਭਿਆਸ ਕਰਦੇ ਰਹੋ।",situationalTalks:"ਸਥਿਤੀ ਅਧਾਰਿਤ ਗੱਲਬਾਤ",realLifeTalks:"ਅਸਲ ਜ਼ਿੰਦਗੀ ਦੀਆਂ ਸਥਿਤੀਆਂ ਵਿੱਚ ਕੀ ਕਹਿਣਾ ਹੈ, ਇਹ ਸਿੱਖੋ।",talk:"ਗੱਲਬਾਤ",talksCount:"ਗੱਲਬਾਤਾਂ",englishHindi:"ਅੰਗਰੇਜ਼ੀ + ਹਿੰਦੀ",listenRepeatRecord:"ਸੁਣੋ, ਦੁਹਰਾਓ, ਰਿਕਾਰਡ ਕਰੋ ਅਤੇ ਆਪਣੇ ਉਚਾਰਣ ਵਿੱਚ ਸੁਧਾਰ ਕਰੋ।",all:"ਸਾਰੇ",beginner:"ਸ਼ੁਰੂਆਤੀ",intermediate:"ਮੱਧਮ",advanced:"ਉੱਨਤ",minutes:"ਮਿੰਟ"
+  },
+  as: {
+    continue:"আগবাঢ়ক",back:"পিছলৈ",language:"ভাষা",home:"হোম",learn:"শিকক",talks:"কথোপকথন",profile:"প্ৰফাইল",
+    online:"অনলাইন",offline:"অফলাইন",buddiesLive:"বন্ধুসকল এতিয়া লাইভ",warmingUp:"সংযোগ প্ৰস্তুত হৈ আছে",
+    speakEnglishEarnConfidence:"ইংৰাজী কওক। আত্মবিশ্বাস বৃদ্ধি কৰক।",freeMinutesLeft:"আজিৰ বিনামূলীয়া মিনিট বাকী · লাইভ কল আৰম্ভ কৰিবলৈ টেপ কৰক",startFreeCall:"বিনামূলীয়া কল আৰম্ভ কৰক",
+    todaysTalkTime:"আজিৰ কথা কোৱাৰ সময়",tasks:"টাস্ক",mentors:"মেণ্টৰ",lessons:"পাঠ",wallet:"ৱালেট",
+    liveMentors:"এতিয়া লাইভ মেণ্টৰ",seeAll:"সকলো চাওক",live:"লাইভ",todaysMissions:"আজিৰ মিছন",allMissionsDone:"আজিৰ সকলো মিছন সম্পূৰ্ণ!",comeBackTomorrow:"নতুন মিছনৰ বাবে কাইলৈ আকৌ আহক।",
+    aiCoach:"আপোনাৰ AI কোচ",quickWarmUp:"দ্ৰুত ৱাৰ্ম-আপ",recommendedLessons:"পৰামৰ্শ দিয়া পাঠ",browse:"চাওক",
+    yourGrowth:"আপোনাৰ অগ্ৰগতি",calls:"কল",mins:"মিনিট",thisWeek:"এই সপ্তাহ",noDataYet:"এতিয়াও কোনো ডাটা নাই",completePracticeToTrack:"ফ্লুয়েন্সি, উচ্চাৰণ আৰু আত্মবিশ্বাসৰ অগ্ৰগতি ট্ৰেক কৰিবলৈ এটা প্ৰেকটিছ কল বা পাঠ সম্পূৰ্ণ কৰক।",
+    fluency:"ফ্লুয়েন্সি",pronunciation:"উচ্চাৰণ",confidence:"আত্মবিশ্বাস",learningProgress:"আপোনাৰ শিক্ষণৰ অগ্ৰগতি",lessonsDone:"পাঠ সম্পূৰ্ণ হৈছে",keepPracticing:"প্ৰতিদিনে অলপকৈ অনুশীলন কৰি থাকক।",situationalTalks:"পৰিস্থিতিভিত্তিক কথোপকথন",realLifeTalks:"বাস্তৱ জীৱনৰ পৰিস্থিতিত ব্যৱহাৰ কৰিবলগীয়া কথা শিকক।",talk:"কথোপকথন",talksCount:"কথোপকথনসমূহ",englishHindi:"ইংৰাজী + হিন্দী",listenRepeatRecord:"শুনক, পুনৰাবৃত্তি কৰক, ৰেকৰ্ড কৰক আৰু আপোনাৰ উচ্চাৰণ উন্নত কৰক।",all:"সকলো",beginner:"আৰম্ভণিৰ",intermediate:"মধ্যমীয়া",advanced:"উন্নত",minutes:"মিনিট"
+  },
+  ur: {
+    continue:"جاری رکھیں",back:"واپس",language:"زبان",home:"ہوم",learn:"سیکھیں",talks:"گفتگو",profile:"پروفائل",
+    online:"آن لائن",offline:"آف لائن",buddiesLive:"دوست ابھی لائیو ہیں",warmingUp:"کنکشن تیار ہو رہا ہے",
+    speakEnglishEarnConfidence:"انگریزی بولیں۔ اعتماد بڑھائیں۔",freeMinutesLeft:"آج کے مفت منٹ باقی ہیں · لائیو کال شروع کرنے کے لیے ٹیپ کریں",startFreeCall:"مفت کال شروع کریں",
+    todaysTalkTime:"آج کا بات چیت کا وقت",tasks:"ٹاسکس",mentors:"مینٹورز",lessons:"اسباق",wallet:"والیٹ",
+    liveMentors:"ابھی لائیو مینٹورز",seeAll:"سب دیکھیں",live:"لائیو",todaysMissions:"آج کے مشنز",allMissionsDone:"آج کے تمام مشنز مکمل!",comeBackTomorrow:"نئے مشنز کے لیے کل واپس آئیں۔",
+    aiCoach:"آپ کا AI کوچ",quickWarmUp:"فوری وارم اپ",recommendedLessons:"تجویز کردہ اسباق",browse:"دیکھیں",
+    yourGrowth:"آپ کی ترقی",calls:"کالز",mins:"منٹ",thisWeek:"اس ہفتے",noDataYet:"ابھی کوئی ڈیٹا نہیں",completePracticeToTrack:"اپنی روانی، تلفظ اور اعتماد کی ترقی کو ٹریک کرنے کے لیے پریکٹس کال یا سبق مکمل کریں۔",
+    fluency:"روانی",pronunciation:"تلفظ",confidence:"اعتماد",learningProgress:"آپ کی سیکھنے کی پیش رفت",lessonsDone:"اسباق مکمل",keepPracticing:"ہر روز تھوڑی مشق کرتے رہیں۔",situationalTalks:"صورتحال پر مبنی گفتگو",realLifeTalks:"حقیقی زندگی کی صورتحال میں کیا کہنا ہے، سیکھیں۔",talk:"گفتگو",talksCount:"گفتگوئیں",englishHindi:"انگریزی + ہندی",listenRepeatRecord:"سنیں، دہرائیں، ریکارڈ کریں اور اپنے تلفظ کو بہتر بنائیں۔",all:"سب",beginner:"ابتدائی",intermediate:"درمیانی",advanced:"اعلیٰ",minutes:"منٹ"
+  },
+  th: {
+    continue:"ดำเนินการต่อ",back:"ย้อนกลับ",language:"ภาษา",home:"หน้าหลัก",learn:"เรียนรู้",talks:"บทสนทนา",profile:"โปรไฟล์",
+    online:"ออนไลน์",offline:"ออฟไลน์",buddiesLive:"เพื่อนกำลังไลฟ์",warmingUp:"กำลังเตรียมการเชื่อมต่อ",
+    speakEnglishEarnConfidence:"พูดภาษาอังกฤษ เพิ่มความมั่นใจ",freeMinutesLeft:"นาทีฟรีวันนี้เหลืออยู่ · แตะเพื่อเริ่มสายสด",startFreeCall:"เริ่มสายฟรี",
+    todaysTalkTime:"เวลาพูดคุยวันนี้",tasks:"ภารกิจ",mentors:"เมนเทอร์",lessons:"บทเรียน",wallet:"กระเป๋าเงิน",
+    liveMentors:"เมนเทอร์ที่กำลังไลฟ์",seeAll:"ดูทั้งหมด",live:"ไลฟ์",todaysMissions:"ภารกิจวันนี้",allMissionsDone:"ภารกิจวันนี้เสร็จทั้งหมดแล้ว!",comeBackTomorrow:"กลับมาอีกครั้งพรุ่งนี้เพื่อรับภารกิจใหม่",
+    aiCoach:"โค้ช AI ของคุณ",quickWarmUp:"วอร์มอัพด่วน",recommendedLessons:"บทเรียนแนะนำ",browse:"ดู",
+    yourGrowth:"ความก้าวหน้าของคุณ",calls:"สาย",mins:"นาที",thisWeek:"สัปดาห์นี้",noDataYet:"ยังไม่มีข้อมูล",completePracticeToTrack:"ทำสายฝึกพูดหรือบทเรียนให้เสร็จเพื่อเริ่มติดตามความคล่องแคล่ว การออกเสียง และความมั่นใจ",
+    fluency:"ความคล่องแคล่ว",pronunciation:"การออกเสียง",confidence:"ความมั่นใจ",learningProgress:"ความก้าวหน้าในการเรียนรู้ของคุณ",lessonsDone:"บทเรียนที่เรียนจบ",keepPracticing:"ฝึกฝนเล็กน้อยทุกวันอย่างต่อเนื่อง",situationalTalks:"บทสนทนาตามสถานการณ์",realLifeTalks:"เรียนรู้ว่าควรพูดอะไรในสถานการณ์จริง",talk:"บทสนทนา",talksCount:"บทสนทนา",englishHindi:"ภาษาอังกฤษ + ภาษาฮินดี",listenRepeatRecord:"ฟัง พูดตาม บันทึกเสียง และพัฒนาการออกเสียงของคุณ",all:"ทั้งหมด",beginner:"ระดับเริ่มต้น",intermediate:"ระดับกลาง",advanced:"ระดับสูง",minutes:"นาที"
+  },
+};
+export function translate(language: AppLanguage, key: TranslationKey): string {
+  return TRANSLATIONS[language][key] ?? TRANSLATIONS.en[key];
+}
+
+export type { TranslationKey };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

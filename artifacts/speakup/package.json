@@ -9,7 +9,9 @@
     "dev:web": "EXPO_PUBLIC_DOMAIN=${EXPO_PUBLIC_DOMAIN:-localhost:8080} expo start --web --port ${PORT:-8081}",
     "build": "node scripts/build.js",
     "serve": "node server/serve.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -59,11 +61,22 @@
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "13.0.0",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.8.0",
+    "expo": "~54.0.33",
+    "expo-asset": "~12.0.13",
+    "expo-av": "~16.0.8",
     "expo-clipboard": "~8.0.8",
+    "expo-gl": "~16.0.10",
     "expo-local-authentication": "~17.0.9",
     "expo-speech": "~14.0.8",
+    "expo-three": "^8.0.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
     "react-native-incall-manager": "^4.2.2",
     "react-native-webrtc": "124.0.6",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "three": "^0.186.0",
+    "three-stdlib": "^2.36.1"
   }
 }

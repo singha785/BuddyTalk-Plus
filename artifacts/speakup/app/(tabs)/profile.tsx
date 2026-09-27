@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+﻿import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { Platform, ScrollView, Switch, Text, View } from "react-native";
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/Avatar";
 import { Card } from "@/components/Card";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -24,10 +25,11 @@ const GOAL_LABELS: Record<string, string> = {
 export default function ProfileTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { state, resetAccount } = useApp();
+  const { state, resetAccount, setLanguage } = useApp();
   const { signOut, user: authUser } = useAuth();
   const [safeMode, setSafeMode] = React.useState<boolean>(true);
   const [notifications, setNotifications] = React.useState<boolean>(true);
+  const [languageSelectorVisible, setLanguageSelectorVisible] = React.useState(false);
 
   const initials = (state.profile.name || "S").charAt(0).toUpperCase();
 
@@ -176,7 +178,7 @@ export default function ProfileTab() {
             label="Call history"
             description={
               state.callHistory.length > 0
-                ? `${state.callHistory.length} session${state.callHistory.length === 1 ? "" : "s"} · tap for AI feedback`
+                ? `${state.callHistory.length} session${state.callHistory.length === 1 ? "" : "s"} Â· tap for AI feedback`
                 : "Your past sessions and AI feedback"
             }
             onPress={() => router.push("/history")}
@@ -204,9 +206,9 @@ export default function ProfileTab() {
           <SettingRow
             icon="globe"
             label="Language"
-            description="English (default)"
+            description={state.language === "hi" ? "हिन्दी" : state.language === "bn" ? "বাংলা" : state.language === "mr" ? "मराठी" : state.language === "te" ? "తెలుగు" : state.language === "ta" ? "தமிழ்" : state.language === "kn" ? "ಕನ್ನಡ" : state.language === "ml" ? "മലയാളം" : state.language === "gu" ? "ગુજરાતી" : state.language === "or" ? "ଓଡ଼ିଆ" : state.language === "pa" ? "ਪੰਜਾਬੀ" : state.language === "as" ? "অসমীয়া" : state.language === "ur" ? "اردو" : state.language === "th" ? "ไทย" : "English"}
             onPress={() =>
-              showAlert("Language", "More translations coming soon.")
+              setLanguageSelectorVisible(true)
             }
           />
           <Divider />
@@ -215,7 +217,7 @@ export default function ProfileTab() {
             label="Help & support"
             description="FAQs and contact"
             onPress={() =>
-              showAlert("Support", "Email hello@buddytalk.app — we'll reply within 24h.")
+              showAlert("Support", "Email hello@buddytalk.app â€” we'll reply within 24h.")
             }
           />
           <Divider />
@@ -267,9 +269,11 @@ export default function ProfileTab() {
             marginTop: 28,
           }}
         >
-          BuddyTalk+ v1.0 · Made for South Asia
+          BuddyTalk+ v1.0 Â· Made for South Asia
         </Text>
       </ScrollView>
+
+      <LanguageSelector visible={languageSelectorVisible} selected={state.language} onSelect={setLanguage} onClose={() => setLanguageSelectorVisible(false)} />
     </View>
   );
 }
@@ -458,3 +462,9 @@ function sectionHeader(colors: ReturnType<typeof useColors>) {
     marginBottom: 12,
   };
 }
+
+
+
+
+
+

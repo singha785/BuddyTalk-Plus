@@ -19,7 +19,8 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "BuddyTalk+ needs your microphone to speak with practice partners and mentors.",
         "NSCameraUsageDescription": "BuddyTalk+ may use your camera for video calls."
-      }
+      },
+      "bitcode": false
     },
     "android": {
       "package": "com.buddytalkplus.app",
@@ -31,7 +32,13 @@
         "android.permission.INTERNET",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WAKE_LOCK",
+        "android.permission.BLUETOOTH"
       ]
     },
     "web": {
@@ -53,11 +60,20 @@
           "cameraPermission": "Allow BuddyTalk+ to access your camera for video calls.",
           "microphonePermission": "Allow BuddyTalk+ to access your microphone to speak with practice partners and mentors."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://buddytalkplus.app/"
+      },
+      "eas": {
+        "projectId": "8201276f-3c97-4277-b023-e12bfc14a2f0"
+      }
     }
   }
 }

@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "bf6c6bf8-190c-4611-8add-fd0d19569c09"
+      }
+    },
+    "android": {
+      "package": "com.singhaa.workspace"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createServer } from "http";
 import app from "./app";
 import { initSocket } from "./socket";

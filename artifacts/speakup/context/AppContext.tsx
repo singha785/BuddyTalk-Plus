@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+﻿import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   useCallback,
@@ -13,6 +13,7 @@ import type { PronunciationScore } from "@/utils/pronunciationScore";
 
 export type UserGoal = "job" | "study" | "daily" | "travel";
 export type UserLevel = "Beginner" | "Intermediate" | "Advanced";
+export type AppLanguage = "en" | "hi" | "bn" | "mr" | "te" | "ta" | "kn" | "ml" | "gu" | "or" | "pa" | "as" | "ur" | "th";
 
 export type UserProfile = {
   name: string;
@@ -46,6 +47,7 @@ export type LessonScoreEntry = {
 };
 
 export type AppState = {
+  language: AppLanguage;
   profile: UserProfile;
   coins: number;
   premium: boolean;
@@ -74,12 +76,13 @@ const COIN_AD_REWARD = 15;
 const DAILY_LOGIN_BONUS = 100;
 
 // Each user account gets its own isolated storage slot.
-// v2 because v1 used a global key — all v1 data is abandoned on next login.
+// v2 because v1 used a global key â€” all v1 data is abandoned on next login.
 const userStorageKey = (id: string) => `speakup.state.v2.${id}`;
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
 
 const defaultState: AppState = {
+  language: "en",
   profile: {
     name: "",
     goal: null,
@@ -136,6 +139,7 @@ type AppContextValue = {
   completeLesson: (lessonId: string) => Promise<void>;
   savePronunciationScore: (lessonId: string, score: PronunciationScore) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
+  setLanguage: (language: AppLanguage) => Promise<void>;
   trackGreeting: (partnerId: string) => Promise<void>;
   blockUser: (name: string) => Promise<void>;
   unblockUser: (name: string) => Promise<void>;
@@ -178,7 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
   const [ready, setReady] = useState<boolean>(false);
 
-  // ── Load per-user state whenever auth resolves or the logged-in account changes ──
+  // â”€â”€ Load per-user state whenever auth resolves or the logged-in account changes â”€â”€
   useEffect(() => {
     if (!authReady) return;
 
@@ -186,7 +190,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = authUser?.id;
 
     if (!userId) {
-      // Logged out — show clean default, no storage write
+      // Logged out â€” show clean default, no storage write
       setState(defaultState);
       setReady(true);
       return;
@@ -215,7 +219,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setState(rolled);
           await AsyncStorage.setItem(key, JSON.stringify(rolled));
         } else {
-          // First open for this account — start fresh with their server profile
+          // First open for this account â€” start fresh with their server profile
           const initial = bumpStreak({
             ...defaultState,
             profile: {
@@ -420,6 +424,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, persist],
   );
 
+  const setLanguage = useCallback<AppContextValue["setLanguage"]>(
+    async (language) => { await persist({ ...state, language }); },
+    [state, persist],
+  );
+
   const setPremium = useCallback<AppContextValue["setPremium"]>(
     async (value) => { await persist({ ...state, premium: value }); },
     [state, persist],
@@ -453,6 +462,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeLesson,
       savePronunciationScore,
       setPremium,
+      setLanguage,
       trackGreeting,
       blockUser,
       unblockUser,
@@ -462,7 +472,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [
     state, ready, completeOnboarding, addCoins, spendCoins, watchAdReward,
     consumeFreeMinutes, recordCall, completeTask, completeLesson,
-    savePronunciationScore, setPremium, trackGreeting, blockUser, unblockUser, reportCall, resetAccount,
+    savePronunciationScore, setPremium, setLanguage, trackGreeting, blockUser, unblockUser, reportCall, resetAccount,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -480,3 +490,11 @@ export const CONSTANTS = {
   COIN_AD_REWARD,
   DAILY_LOGIN_BONUS,
 };
+
+
+
+
+
+
+
+

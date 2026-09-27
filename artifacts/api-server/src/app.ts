@@ -36,7 +36,7 @@ const allowedOrigins = isDev
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: isDev ? ["http://localhost:8081", "http://localhost:8082", "http://localhost:8083"] : allowedOrigins,
     credentials: true,
   }),
 );
@@ -55,3 +55,7 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
 });
 
 export default app;
+
+
+
+

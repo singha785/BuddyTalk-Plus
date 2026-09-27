@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+﻿import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Platform, ScrollView, Text, View } from "react-native";
@@ -9,7 +9,9 @@ import { Pill } from "@/components/Pill";
 import { Pressable } from "@/components/Pressable";
 import { useApp } from "@/context/AppContext";
 import { LESSONS } from "@/data/lessons";
+import { TALK_CATEGORIES, TALKS } from "@/data/talks";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -18,11 +20,49 @@ const FILTERS = [
   { id: "Advanced", label: "Advanced" },
 ] as const;
 
+const TALK_CATEGORY_STYLES: Record<
+  "job-interview" | "teacher" | "workplace" | "college" | "daily",
+  {
+    icon: React.ComponentProps<typeof Feather>["name"];
+    bg: string;
+    fg: string;
+  }
+> = {
+  "job-interview": {
+    icon: "briefcase",
+    bg: "#E8F0FF",
+    fg: "#3158B7",
+  },
+  teacher: {
+    icon: "book-open",
+    bg: "#FFF0D9",
+    fg: "#9A5A00",
+  },
+  workplace: {
+    icon: "users",
+    bg: "#E5F7F0",
+    fg: "#08745A",
+  },
+  college: {
+    icon: "book",
+    bg: "#F0E9FF",
+    fg: "#6941C6",
+  },
+  daily: {
+    icon: "coffee",
+    bg: "#FFE9E2",
+    fg: "#A63F1D",
+  },
+};
+
 export default function LearnTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { state } = useApp();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  const { t } = useTranslation();
+
+  const [filter, setFilter] =
+    useState<(typeof FILTERS)[number]["id"]>("all");
 
   const lessons = useMemo(() => {
     if (filter === "all") return LESSONS;
@@ -31,18 +71,28 @@ export default function LearnTab() {
 
   const completedCount = state.completedLessons.length;
   const totalLessons = LESSONS.length;
-  const progress = Math.round((completedCount / totalLessons) * 100);
+  const progress =
+    totalLessons > 0
+      ? Math.round((completedCount / totalLessons) * 100)
+      : 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.background,
+      }}
+    >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16),
+          paddingTop:
+            insets.top + (Platform.OS === "web" ? 67 : 16),
           paddingBottom: insets.bottom + 120,
           paddingHorizontal: 20,
         }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Main header */}
         <Text
           style={{
             fontFamily: "Inter_700Bold",
@@ -50,19 +100,22 @@ export default function LearnTab() {
             color: colors.foreground,
           }}
         >
-          Lessons
+          {t("learn")}
         </Text>
+
         <Text
           style={{
             fontFamily: "Inter_400Regular",
             fontSize: 14,
+            lineHeight: 21,
             color: colors.mutedForeground,
             marginTop: 4,
           }}
         >
-          Tap any lesson to listen and repeat aloud.
+          Build English skills through lessons, speaking practice and real-life conversations.
         </Text>
 
+        {/* Learning progress */}
         <Card style={{ marginTop: 18 }}>
           <View
             style={{
@@ -71,7 +124,7 @@ export default function LearnTab() {
               alignItems: "center",
             }}
           >
-            <View>
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   fontFamily: "Inter_600SemiBold",
@@ -79,8 +132,9 @@ export default function LearnTab() {
                   color: colors.mutedForeground,
                 }}
               >
-                Your library
+                {t("learningProgress")}
               </Text>
+
               <Text
                 style={{
                   fontFamily: "Inter_700Bold",
@@ -89,9 +143,21 @@ export default function LearnTab() {
                   marginTop: 4,
                 }}
               >
-                {completedCount} of {totalLessons} done
+                {completedCount} {t("lessonsDone")} {totalLessons}
+              </Text>
+
+              <Text
+                style={{
+                  fontFamily: "Inter_400Regular",
+                  fontSize: 12,
+                  color: colors.mutedForeground,
+                  marginTop: 3,
+                }}
+              >
+                {t("keepPracticing")}
               </Text>
             </View>
+
             <View
               style={{
                 width: 64,
@@ -100,6 +166,7 @@ export default function LearnTab() {
                 backgroundColor: colors.primary,
                 alignItems: "center",
                 justifyContent: "center",
+                marginLeft: 12,
               }}
             >
               <Text
@@ -115,33 +182,235 @@ export default function LearnTab() {
           </View>
         </Card>
 
+        {/* Situational Talks */}
+        <View
+          style={{
+            marginTop: 28,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontFamily: "Inter_700Bold",
+                fontSize: 21,
+                color: colors.foreground,
+              }}
+            >
+              {t("situationalTalks")}
+            </Text>
+
+            <Text
+              style={{
+                fontFamily: "Inter_400Regular",
+                fontSize: 13,
+                lineHeight: 19,
+                color: colors.mutedForeground,
+                marginTop: 3,
+              }}
+            >
+              {t("learn")} what to say in real-life situations.
+            </Text>
+          </View>
+
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Feather
+              name="message-circle"
+              size={20}
+              color="#FFFFFF"
+            />
+          </View>
+        </View>
+
+        <View style={{ gap: 10, marginTop: 14 }}>
+          {TALK_CATEGORIES.map((category) => {
+            const style = TALK_CATEGORY_STYLES[category.id as "job-interview" | "teacher" | "workplace" | "college" | "daily"];
+            const categoryTalks = TALKS.filter(
+              (talk) => talk.category === category.id,
+            );
+
+            return (
+              <Pressable
+                key={category.id}
+                onPress={() => {
+                  const firstTalk = categoryTalks[0];
+
+                  if (firstTalk) {
+                    router.push({ pathname: "/talk/[id]", params: { id: firstTalk.id } });
+                  }
+                }}
+              >
+                <Card>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 14,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 15,
+                        backgroundColor: style.bg,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Feather
+                        name={style.icon}
+                        size={21}
+                        color={style.fg}
+                      />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 15,
+                          color: colors.foreground,
+                        }}
+                      >
+                        {category.title}
+                      </Text>
+
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 12,
+                          lineHeight: 18,
+                          color: colors.mutedForeground,
+                          marginTop: 3,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {category.description}
+                      </Text>
+
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                          marginTop: 7,
+                        }}
+                      >
+                        <Pill
+                          label={`${categoryTalks.length} ${
+                            categoryTalks.length === 1
+                              ? t("talk")
+                              : t("talksCount")
+                          }`}
+                          tone="primary"
+                        />
+
+                        <Text
+                          style={{
+                            fontFamily: "Inter_500Medium",
+                            fontSize: 11,
+                            color: colors.mutedForeground,
+                          }}
+                        >
+                          {t("englishHindi")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Feather
+                      name="chevron-right"
+                      size={20}
+                      color={colors.mutedForeground}
+                    />
+                  </View>
+                </Card>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Lessons */}
+        <View
+          style={{
+            marginTop: 32,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: "Inter_700Bold",
+              fontSize: 21,
+              color: colors.foreground,
+            }}
+          >
+            {t("lessons")}
+          </Text>
+
+          <Text
+            style={{
+              fontFamily: "Inter_400Regular",
+              fontSize: 13,
+              lineHeight: 19,
+              color: colors.mutedForeground,
+              marginTop: 3,
+            }}
+          >
+            {t("listenRepeatRecord")}
+          </Text>
+        </View>
+
+        {/* Lesson filters */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingVertical: 16 }}
+          contentContainerStyle={{
+            gap: 8,
+            paddingVertical: 16,
+          }}
         >
           {FILTERS.map((f) => {
             const active = filter === f.id;
+
             return (
-              <Pressable key={f.id} onPress={() => setFilter(f.id)}>
+              <Pressable
+                key={f.id}
+                onPress={() => setFilter(f.id)}
+              >
                 <View
                   style={{
                     paddingHorizontal: 16,
                     paddingVertical: 9,
                     borderRadius: 999,
-                    backgroundColor: active ? colors.primary : colors.card,
+                    backgroundColor: active
+                      ? colors.primary
+                      : colors.card,
                     borderWidth: 1,
-                    borderColor: active ? colors.primary : colors.border,
+                    borderColor: active
+                      ? colors.primary
+                      : colors.border,
                   }}
                 >
                   <Text
                     style={{
                       fontFamily: "Inter_600SemiBold",
                       fontSize: 13,
-                      color: active ? "#FFFFFF" : colors.foreground,
+                      color: active
+                        ? "#FFFFFF"
+                        : colors.foreground,
                     }}
                   >
-                    {f.label}
+                    {f.id === "all" ? t("all") : f.id === "Beginner" ? t("beginner") : f.id === "Intermediate" ? t("intermediate") : t("advanced")}
                   </Text>
                 </View>
               </Pressable>
@@ -149,13 +418,17 @@ export default function LearnTab() {
           })}
         </ScrollView>
 
+        {/* Lesson cards */}
         <View style={{ gap: 10 }}>
           {lessons.map((l) => {
             const done = state.completedLessons.includes(l.id);
+
             return (
               <Pressable
                 key={l.id}
-                onPress={() => router.push(`/lesson/${l.id}`)}
+                onPress={() =>
+                  router.push(`/lesson/${l.id}`)
+                }
               >
                 <Card>
                   <View
@@ -170,7 +443,9 @@ export default function LearnTab() {
                         width: 48,
                         height: 48,
                         borderRadius: 14,
-                        backgroundColor: categoryBg(l.category),
+                        backgroundColor: categoryBg(
+                          l.category,
+                        ),
                         alignItems: "center",
                         justifyContent: "center",
                       }}
@@ -181,6 +456,7 @@ export default function LearnTab() {
                         color={categoryFg(l.category)}
                       />
                     </View>
+
                     <View style={{ flex: 1 }}>
                       <View
                         style={{
@@ -198,6 +474,7 @@ export default function LearnTab() {
                         >
                           {l.title}
                         </Text>
+
                         {done ? (
                           <Feather
                             name="check-circle"
@@ -206,6 +483,7 @@ export default function LearnTab() {
                           />
                         ) : null}
                       </View>
+
                       <Text
                         style={{
                           fontFamily: "Inter_400Regular",
@@ -217,6 +495,7 @@ export default function LearnTab() {
                       >
                         {l.description}
                       </Text>
+
                       <View
                         style={{
                           flexDirection: "row",
@@ -235,6 +514,7 @@ export default function LearnTab() {
                               : "warning"
                           }
                         />
+
                         <View
                           style={{
                             flexDirection: "row",
@@ -247,6 +527,7 @@ export default function LearnTab() {
                             size={11}
                             color={colors.mutedForeground}
                           />
+
                           <Text
                             style={{
                               fontFamily: "Inter_500Medium",
@@ -254,11 +535,12 @@ export default function LearnTab() {
                               color: colors.mutedForeground,
                             }}
                           >
-                            {l.minutes} min
+                            {l.minutes} {t("minutes")}
                           </Text>
                         </View>
                       </View>
                     </View>
+
                     <Feather
                       name="chevron-right"
                       size={20}
@@ -297,3 +579,9 @@ function categoryFg(cat: string): string {
   if (cat === "grammar") return "#7A4A00";
   return "#0E6F5A";
 }
+
+
+
+
+
+

@@ -10,11 +10,17 @@ import { CoinBadge } from "@/components/CoinBadge";
 import { Pressable } from "@/components/Pressable";
 import { ProgressBar } from "@/components/ProgressBar";
 import { useApp } from "@/context/AppContext";
-import { DAILY_TASKS, type DailyTask } from "@/data/tasks";
+import {
+  CATEGORY_META,
+  CATEGORY_ORDER,
+  DAILY_TASKS,
+  TIER_META,
+  type DailyTask,
+} from "@/data/tasks";
 import { useColors } from "@/hooks/useColors";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
-// ── Data for task overlays ───────────────────────────────────────────────────
+// ── Data for task overlays ──────────────────────────────────────────────────
 
 const LISTEN_PHRASES = [
   "The weather is lovely today, isn't it?",
@@ -52,16 +58,110 @@ const TWISTER_REQUIRED = 3;
 const HOLD_DURATION_MS = 3500; // ms to hold mic button on native (no speech API)
 const SELF_INTRO_MIN_WORDS = 15;
 
+// ── Prompt-based tasks (debate / explain / roleplay / word-use) ─────────────
+// Content rotates daily so the same task feels fresh from day to day.
+
+interface DebateTopic { topic: string; rebuttal: string; }
+
+const DEBATE_TOPICS: DebateTopic[] = [
+  { topic: "Is social media good or bad for society?", rebuttal: "But doesn't heavy social media use hurt people's focus and mental health?" },
+  { topic: "Should students choose their own school subjects?", rebuttal: "But couldn't students end up avoiding subjects that are actually important later?" },
+  { topic: "Is remote work better than working in an office?", rebuttal: "But doesn't remote work make it harder to build real teamwork and mentorship?" },
+  { topic: "Should smartphones be allowed in classrooms?", rebuttal: "But wouldn't phones just distract students during lessons?" },
+  { topic: "Is it better to live in a big city or a small town?", rebuttal: "But isn't it much harder to find good job opportunities in a small town?" },
+];
+
+const EXPLAIN_TOPICS = [
+  "How does a refrigerator keep food cold?",
+  "Why do we have different time zones?",
+  "How does a search engine find information so fast?",
+  "Why does the moon change shape every month?",
+  "How does Wi-Fi let phones connect without wires?",
+];
+
+const ROLEPLAY_SCENARIOS: { title: string; prompt: string }[] = [
+  { title: "Ordering at a restaurant", prompt: "You are at a restaurant. Order a meal and ask the waiter one question about a dish on the menu." },
+  { title: "Doctor's appointment", prompt: "You are visiting a doctor. Describe a mild symptom you have and ask what you should do." },
+  { title: "Customer support call", prompt: "You are calling customer support about a late delivery. Explain the issue and ask for a solution." },
+  { title: "Checking into a hotel", prompt: "You are checking into a hotel. Confirm your booking and ask about breakfast timings." },
+  { title: "Asking for directions", prompt: "You are lost in a new city. Stop someone and ask them how to get to the nearest train station." },
+];
+
+const WORD_OF_DAY_LIST: { word: string; meaning: string; example: string }[] = [
+  { word: "Resilient", meaning: "Able to recover quickly from difficulties", example: "She stayed resilient even after the setback." },
+  { word: "Meticulous", meaning: "Very careful and precise about details", example: "He is meticulous when reviewing his work." },
+  { word: "Versatile", meaning: "Able to adapt to many different tasks", example: "She's a versatile speaker, comfortable in any setting." },
+  { word: "Candid", meaning: "Honest and direct in speech", example: "I appreciate how candid he was during the interview." },
+  { word: "Proactive", meaning: "Acting in advance rather than reacting", example: "Being proactive helped the team avoid the delay." },
+];
+
+/** Rotates through a list using the day of the month, so content changes daily. */
+function dailyPick<T>(items: T[]): T {
+  return items[new Date().getDate() % items.length];
+}
+
+type PromptKind = "explain" | "roleplay" | "wordUse";
+
+interface PromptOverlayConfig {
+  kind: PromptKind;
+  taskId: string;
+  reward: number;
+  heading: string;
+  promptText: string;
+  subtext?: string;
+  hint: string;
+}
+
+function getPromptConfig(taskId: string): PromptOverlayConfig | null {
+  if (taskId === "task-explain-pro") {
+    return {
+      kind: "explain",
+      taskId,
+      reward: 12,
+      heading: "Explain like a pro",
+      promptText: dailyPick(EXPLAIN_TOPICS),
+      hint: "Explain it clearly, the way you would in an interview.",
+    };
+  }
+  if (taskId === "task-roleplay") {
+    const scenario = dailyPick(ROLEPLAY_SCENARIOS);
+    return {
+      kind: "roleplay",
+      taskId,
+      reward: 13,
+      heading: scenario.title,
+      promptText: scenario.prompt,
+      hint: "Speak your part out loud, as if it's really happening.",
+    };
+  }
+  if (taskId === "task-word-use") {
+    const w = dailyPick(WORD_OF_DAY_LIST);
+    return {
+      kind: "wordUse",
+      taskId,
+      reward: 7,
+      heading: "Word of the day",
+      promptText: w.word,
+      subtext: `${w.meaning}\ne.g. "${w.example}"`,
+      hint: "Now say your own sentence using this word.",
+    };
+  }
+  return null;
+}
+
 // ── Icon / colour maps ───────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<DailyTask["type"], React.ComponentProps<typeof Feather>["name"]> = {
   speak: "mic", listen: "headphones", learn: "book-open", talk: "phone-call",
+  debate: "message-circle", explain: "zap", roleplay: "users", wordUse: "edit-3",
 };
 const TYPE_BG: Record<DailyTask["type"], string> = {
   speak: "#EAE2FF", listen: "#FFE9DD", learn: "#FFF1D6", talk: "#DDF5EE",
+  debate: "#FFE1E8", explain: "#E1F0FF", roleplay: "#E9E1FF", wordUse: "#FDE7FF",
 };
 const TYPE_FG: Record<DailyTask["type"], string> = {
   speak: "#5B3DFF", listen: "#A93D00", learn: "#7A4A00", talk: "#0E6F5A",
+  debate: "#C2185B", explain: "#0B63B3", roleplay: "#5B3DFF", wordUse: "#9C1FB0",
 };
 
 // ── TasksScreen ──────────────────────────────────────────────────────────────
@@ -71,7 +171,7 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const { state, completeTask } = useApp();
 
-  // ── Self-intro state ─────────────────────────────────────────────────────
+  // ── Self-intro state ────────────────────────────────────────────────────
   const [introOpen, setIntroOpen] = useState(false);
   const [introActive, setIntroActive] = useState(false);
   const [introText, setIntroText] = useState("");
@@ -85,7 +185,7 @@ export default function TasksScreen() {
   const introDurationSec = introStartTime ? Math.max(1, (Date.now() - introStartTime) / 1000) : 1;
   const introWPM = Math.round((introWords / introDurationSec) * 60);
 
-  // ── Listen-and-repeat state ──────────────────────────────────────────────
+  // ── Listen-and-repeat state ─────────────────────────────────────────────
   const [listenOpen, setListenOpen] = useState(false);
   const [listenPhraseIdx, setListenPhraseIdx] = useState(0);
   const [listenDone, setListenDone] = useState([false, false, false]);
@@ -108,12 +208,30 @@ export default function TasksScreen() {
   const [twisterRecording, setTwisterRecording] = useState(false);
   const [twisterFeedback, setTwisterFeedback] = useState<string | null>(null);
 
+  // ── Prompt-based overlay state (explain / roleplay / word-use) ──────────
+  const [promptOpen, setPromptOpen] = useState<PromptOverlayConfig | null>(null);
+  const [promptRecording, setPromptRecording] = useState(false);
+  const [promptFeedback, setPromptFeedback] = useState<string | null>(null);
+  const [promptDone, setPromptDone] = useState(false);
+
+  // ── Debate overlay state (2-round: opening argument + rebuttal) ─────────
+  const [debateOpen, setDebateOpen] = useState(false);
+  const [debateTopicData, setDebateTopicData] = useState<DebateTopic | null>(null);
+  const [debateStance, setDebateStance] = useState<"agree" | "disagree" | null>(null);
+  const [debateRound, setDebateRound] = useState<1 | 2>(1);
+  const [debateRound1Done, setDebateRound1Done] = useState(false);
+  const [debateRound2Done, setDebateRound2Done] = useState(false);
+  const [debateRecording, setDebateRecording] = useState(false);
+  const [debateFeedback, setDebateFeedback] = useState<string | null>(null);
+  const debateRoundRef = useRef<1 | 2>(1);
+  useEffect(() => { debateRoundRef.current = debateRound; }, [debateRound]);
+
   // ── Hold-to-record (native fallback) ─────────────────────────────────────
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStartRef = useRef(0);
   const holdCompleteRef = useRef<(() => void) | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
-  const taskTargetRef = useRef<"listen" | "twister" | null>(null);
+  const taskTargetRef = useRef<"listen" | "twister" | "prompt" | "debate" | null>(null);
 
   // ── Speech recognition — self-intro ──────────────────────────────────────
   const onIntroResult = useCallback((text: string) => {
@@ -124,7 +242,7 @@ export default function TasksScreen() {
   }, []);
   const introSpeech = useSpeechRecognition(onIntroResult);
 
-  // ── Speech recognition — task overlays (listen + twister) ────────────────
+  // ── Speech recognition — task overlays (listen + twister + prompt) ──────
   const onTaskSpeechResult = useCallback((text: string) => {
     const target = taskTargetRef.current;
     if (target === "listen") {
@@ -142,6 +260,21 @@ export default function TasksScreen() {
       setTwisterFeedback("Attempt recorded ✓");
       setTwisterAttempts(prev => Math.min(prev + 1, TWISTER_REQUIRED));
       setTwisterRecording(false);
+    } else if (target === "prompt") {
+      const msg = text.trim()
+        ? `"${text.slice(0, 80)}${text.length > 80 ? "…" : ""}"`
+        : "Speech detected ✓";
+      setPromptFeedback(msg);
+      setPromptDone(true);
+      setPromptRecording(false);
+    } else if (target === "debate") {
+      const msg = text.trim()
+        ? `"${text.slice(0, 80)}${text.length > 80 ? "…" : ""}"`
+        : "Speech detected ✓";
+      setDebateFeedback(msg);
+      if (debateRoundRef.current === 1) setDebateRound1Done(true);
+      else setDebateRound2Done(true);
+      setDebateRecording(false);
     }
   }, []);
   const taskSpeech = useSpeechRecognition(onTaskSpeechResult);
@@ -151,10 +284,12 @@ export default function TasksScreen() {
     if (!taskSpeech.listening) {
       setListenRecording(false);
       setTwisterRecording(false);
+      setPromptRecording(false);
+      setDebateRecording(false);
     }
   }, [taskSpeech.listening]);
 
-  // ── Greeting micro-feedback animation (Task 1) ────────────────────────────
+  // ── Greeting micro-feedback animation (Task 1) ───────────────────────────
   const greetCount = state.greetedPartners.length;
   const prevGreetRef = useRef(greetCount);
   const [greetFlash, setGreetFlash] = useState(false);
@@ -194,7 +329,7 @@ export default function TasksScreen() {
     return () => clearTimeout(t);
   }, [introActive, introSpeech.listening, introReady, introSpeech]);
 
-  // ── Self-intro actions ───────────────────────────────────────────────────
+  // ── Self-intro actions ────────────────────────────────────────────────────
   const startIntroRecording = () => {
     setIntroText(""); accRef.current = "";
     setIntroStartTime(Date.now());
@@ -236,7 +371,7 @@ export default function TasksScreen() {
     holdCompleteRef.current = null;
   };
 
-  // ── Listen-and-repeat actions ─────────────────────────────────────────────
+  // ── Listen-and-repeat actions ──────────────────────────────────────────────
   const startListenRecording = () => {
     taskTargetRef.current = "listen";
     setListenFeedback(null);
@@ -269,7 +404,7 @@ export default function TasksScreen() {
     closeListenOverlay();
   };
 
-  // ── Vocab quiz actions ────────────────────────────────────────────────────
+  // ── Vocab quiz actions ───────────────────────────────────────────────────
   const openWordsOverlay = () => {
     setWordIdx(0); setWordSelected(null);
     setWordPhase("quiz"); setWordCorrectCount(0); setWordsOpen(true);
@@ -322,7 +457,79 @@ export default function TasksScreen() {
     closeTwisterOverlay();
   };
 
-  // ── Generic fallback (shouldn't be reached now) ───────────────────────────
+  // ── Prompt-based task actions (debate / explain / roleplay / word-use) ──
+  const openPromptOverlay = (taskId: string) => {
+    const cfg = getPromptConfig(taskId);
+    if (!cfg) return;
+    setPromptDone(false); setPromptFeedback(null); setPromptRecording(false);
+    setPromptOpen(cfg);
+  };
+  const startPromptRecording = () => {
+    taskTargetRef.current = "prompt";
+    setPromptFeedback(null);
+    if (taskSpeech.supported) {
+      setPromptRecording(true); taskSpeech.reset(); taskSpeech.startListening();
+    } else {
+      startHoldRecord(() => { setPromptFeedback("Recorded ✓"); setPromptDone(true); });
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+  };
+  const closePromptOverlay = () => {
+    taskSpeech.stopListening(); cancelHoldRecord();
+    setPromptOpen(null); setPromptDone(false); setPromptFeedback(null); setPromptRecording(false);
+  };
+  const completePromptTask = async () => {
+    if (!promptOpen) return;
+    await completeTask(promptOpen.taskId, promptOpen.reward);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    closePromptOverlay();
+  };
+
+  // ── Debate actions (stance → opening round → rebuttal round) ─────────────
+  const openDebateOverlay = () => {
+    setDebateTopicData(dailyPick(DEBATE_TOPICS));
+    setDebateStance(null);
+    setDebateRound(1);
+    setDebateRound1Done(false);
+    setDebateRound2Done(false);
+    setDebateFeedback(null);
+    setDebateRecording(false);
+    setDebateOpen(true);
+  };
+  const chooseStance = (stance: "agree" | "disagree") => {
+    setDebateStance(stance);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  };
+  const startDebateRecording = () => {
+    taskTargetRef.current = "debate";
+    setDebateFeedback(null);
+    if (taskSpeech.supported) {
+      setDebateRecording(true); taskSpeech.reset(); taskSpeech.startListening();
+    } else {
+      startHoldRecord(() => {
+        setDebateFeedback("Recorded ✓");
+        if (debateRoundRef.current === 1) setDebateRound1Done(true);
+        else setDebateRound2Done(true);
+      });
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+  };
+  const advanceToRebuttal = () => {
+    setDebateRound(2);
+    setDebateFeedback(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  };
+  const closeDebateOverlay = () => {
+    taskSpeech.stopListening(); cancelHoldRecord();
+    setDebateOpen(false);
+  };
+  const completeDebateTask = async () => {
+    await completeTask("task-debate", 15);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    closeDebateOverlay();
+  };
+
+  // ── Generic fallback (shouldn't be reached now) ──────────────────────────
   const onComplete = async (t: DailyTask) => {
     await completeTask(t.id, t.reward);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -349,6 +556,10 @@ export default function TasksScreen() {
     }
     if (t.id === "task-learn-words") { openWordsOverlay(); return; }
     if (t.id === "task-tongue-twister") { openTwisterOverlay(); return; }
+    if (t.id === "task-debate") { openDebateOverlay(); return; }
+    if (t.id === "task-explain-pro" || t.id === "task-roleplay" || t.id === "task-word-use") {
+      openPromptOverlay(t.id); return;
+    }
     void onComplete(t);
   };
 
@@ -359,6 +570,92 @@ export default function TasksScreen() {
     paddingTop: insets.top + (Platform.OS === "web" ? 72 : 24),
     paddingBottom: insets.bottom + 32,
     paddingHorizontal: 24,
+  };
+
+  // ── Task card renderer (used inside category groups) ────────────────────
+  const renderTaskCard = (t: DailyTask) => {
+    const isDone = state.completedTasks.includes(t.id);
+    const isGreetTask = t.id === "task-greet-5";
+    const tier = TIER_META[t.tier];
+
+    let actionLabel = "Start";
+    if (t.id === "task-self-intro") actionLabel = "Record";
+    else if (t.id === "task-listen-podcast") actionLabel = "Practice";
+    else if (t.id === "task-learn-words") actionLabel = "Quiz";
+    else if (t.id === "task-tongue-twister") actionLabel = "Record";
+    else if (t.id === "task-real-talk") actionLabel = "Start call";
+    else if (t.id === "task-debate") actionLabel = "Debate";
+    else if (t.id === "task-explain-pro") actionLabel = "Explain";
+    else if (t.id === "task-roleplay") actionLabel = "Roleplay";
+    else if (t.id === "task-word-use") actionLabel = "Use it";
+    else if (isGreetTask) actionLabel = greetCount > 0 ? "Continue" : "Call now";
+
+    return (
+      <Card key={t.id}>
+        <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
+          {/* Icon */}
+          <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: isDone ? colors.muted : TYPE_BG[t.type], alignItems: "center", justifyContent: "center" }}>
+            <Feather name={isDone ? "check" : TYPE_ICONS[t.type]} size={20} color={isDone ? colors.mutedForeground : TYPE_FG[t.type]} />
+          </View>
+
+          {/* Body */}
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color: colors.foreground }}>{t.title}</Text>
+              {isDone && <Feather name="check-circle" size={14} color={colors.success} />}
+              <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: tier.bg }}>
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 10, color: tier.color }}>{tier.label}</Text>
+              </View>
+            </View>
+            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground, marginTop: 4, lineHeight: 18 }}>{t.description}</Text>
+
+            {/* Task 1: 5-bubble progress (replaces numeric counter) */}
+            {isGreetTask && !isDone && (
+              <View style={{ marginTop: 10 }}>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <View key={i} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: i < greetCount ? "#5B3DFF" : "rgba(91,61,255,0.1)", borderWidth: 1.5, borderColor: i < greetCount ? "#5B3DFF" : "rgba(91,61,255,0.3)", alignItems: "center", justifyContent: "center" }}>
+                      {i < greetCount
+                        ? <Feather name="check" size={13} color="#FFFFFF" />
+                        : <Feather name="user" size={12} color="rgba(91,61,255,0.4)" />}
+                    </View>
+                  ))}
+                </View>
+                <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.mutedForeground, marginTop: 6 }}>
+                  Each completed call counts as one greeting ({greetCount}/5).
+                </Text>
+              </View>
+            )}
+
+            {/* Other tasks: clock + coins */}
+            {!isGreetTask && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Feather name="clock" size={11} color={colors.mutedForeground} />
+                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 11, color: colors.mutedForeground }}>{t.minutes} min</Text>
+                </View>
+                <CoinBadge amount={t.reward} size="sm" />
+              </View>
+            )}
+          </View>
+
+          {/* Action button */}
+          {isDone ? (
+            <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.muted }}>
+              <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: colors.mutedForeground }}>Done ✓</Text>
+            </View>
+          ) : (
+            <Pressable onPress={() => handlePress(t)}>
+              <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: isGreetTask && greetCount > 0 ? "#5B3DFF22" : colors.primary, borderWidth: isGreetTask && greetCount > 0 ? 1 : 0, borderColor: colors.primary }}>
+                <Text style={{ color: isGreetTask && greetCount > 0 ? colors.primary : "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 12 }}>
+                  {actionLabel}
+                </Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
+      </Card>
+    );
   };
 
   return (
@@ -387,7 +684,7 @@ export default function TasksScreen() {
           </Animated.View>
         )}
 
-        {/* ════════════════════ Self-intro overlay ═══════════════════════════ */}
+        {/* ═══════════════════════ Self-intro overlay ═══════════════════════ */}
         {introOpen && (
           <View style={{ ...overlayBase, justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -450,7 +747,7 @@ export default function TasksScreen() {
           </View>
         )}
 
-        {/* ════════════════════ Listen-and-repeat overlay ═════════════════════ */}
+        {/* ═══════════════════════ Listen-and-repeat overlay ═══════════════════════ */}
         {listenOpen && (
           <View style={{ ...overlayBase, justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -541,7 +838,7 @@ export default function TasksScreen() {
           </View>
         )}
 
-        {/* ════════════════════ Vocab quiz overlay ════════════════════════════ */}
+        {/* ═══════════════════════ Vocab quiz overlay ═══════════════════════ */}
         {wordsOpen && (
           <View style={{ ...overlayBase, justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -611,7 +908,7 @@ export default function TasksScreen() {
           </View>
         )}
 
-        {/* ════════════════════ Tongue-twister overlay ════════════════════════ */}
+        {/* ═══════════════════════ Tongue-twister overlay ═══════════════════════ */}
         {twisterOpen && (
           <View style={{ ...overlayBase, justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -698,7 +995,207 @@ export default function TasksScreen() {
           </View>
         )}
 
-        {/* ════════════════════ Main scroll list ══════════════════════════════ */}
+        {/* ═══════════════════════ Debate overlay (stance → opening → rebuttal) ═══════════════════════ */}
+        {debateOpen && debateTopicData && (
+          <View style={{ ...overlayBase, justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View>
+                <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 20 }}>Debate a topic</Text>
+                {debateStance && (
+                  <Text style={{ color: "#FFFFFF", opacity: 0.5, fontFamily: "Inter_500Medium", fontSize: 13, marginTop: 2 }}>
+                    Round {debateRound} of 2 · You chose to {debateStance === "agree" ? "Agree" : "Disagree"}
+                  </Text>
+                )}
+              </View>
+              <RNPressable onPress={closeDebateOverlay} hitSlop={12} style={S.closeBtn}>
+                <Feather name="x" size={18} color="#FFFFFF" />
+              </RNPressable>
+            </View>
+
+            {debateStance && (
+              <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 12 }}>
+                {[1, 2].map((r) => (
+                  <View key={r} style={{
+                    width: 10, height: 10, borderRadius: 5,
+                    backgroundColor: (r === 1 ? debateRound1Done : debateRound2Done) ? "#34D27D" : r === debateRound ? "#5B3DFF" : "rgba(255,255,255,0.2)",
+                  }} />
+                ))}
+              </View>
+            )}
+
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 22 }}>
+              {/* Topic card */}
+              <View style={{ backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 20, padding: 24, width: "100%" }}>
+                <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center", lineHeight: 26 }}>
+                  {debateTopicData.topic}
+                </Text>
+              </View>
+
+              {/* Step 1: choose stance */}
+              {!debateStance ? (
+                <View style={{ width: "100%", gap: 12 }}>
+                  <Text style={{ color: "#FFFFFF", opacity: 0.6, fontFamily: "Inter_500Medium", fontSize: 13, textAlign: "center" }}>
+                    Pick your side before you start
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <RNPressable onPress={() => chooseStance("agree")} style={{ flex: 1, backgroundColor: "rgba(52,210,125,0.15)", borderWidth: 1.5, borderColor: "#34D27D", borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
+                      <Feather name="thumbs-up" size={18} color="#34D27D" />
+                      <Text style={{ color: "#34D27D", fontFamily: "Inter_700Bold", fontSize: 14, marginTop: 6 }}>Agree</Text>
+                    </RNPressable>
+                    <RNPressable onPress={() => chooseStance("disagree")} style={{ flex: 1, backgroundColor: "rgba(229,72,77,0.15)", borderWidth: 1.5, borderColor: "#E5484D", borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
+                      <Feather name="thumbs-down" size={18} color="#E5484D" />
+                      <Text style={{ color: "#E5484D", fontFamily: "Inter_700Bold", fontSize: 14, marginTop: 6 }}>Disagree</Text>
+                    </RNPressable>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  {/* Round 2: rebuttal challenge card */}
+                  {debateRound === 2 && (
+                    <View style={{ backgroundColor: "rgba(229,72,77,0.12)", borderWidth: 1, borderColor: "rgba(229,72,77,0.35)", borderRadius: 16, padding: 16, width: "100%", flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+                      <Feather name="alert-triangle" size={16} color="#FF7A45" style={{ marginTop: 2 }} />
+                      <Text style={{ color: "#FFFFFF", opacity: 0.9, fontFamily: "Inter_500Medium", fontSize: 14, flex: 1, lineHeight: 20 }}>
+                        Challenge: {debateTopicData.rebuttal}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Feedback / recording indicator */}
+                  {debateFeedback ? (
+                    <View style={{ backgroundColor: "rgba(52,210,125,0.15)", borderRadius: 14, padding: 14, width: "100%", flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Feather name="check-circle" size={18} color="#34D27D" />
+                      <Text style={{ color: "#34D27D", fontFamily: "Inter_500Medium", fontSize: 14, flex: 1 }} numberOfLines={2}>{debateFeedback}</Text>
+                    </View>
+                  ) : debateRecording ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: "#E5484D" }} />
+                      <Text style={{ color: "#FFFFFF", opacity: 0.75, fontFamily: "Inter_500Medium", fontSize: 14 }}>Listening…</Text>
+                    </View>
+                  ) : taskSpeech.error ? (
+                    <Text style={S.errTxt}>{taskSpeech.error} — tap mic to try again</Text>
+                  ) : null}
+
+                  {!taskSpeech.supported && holdProgress > 0 && holdProgress < 100 && taskTargetRef.current === "debate" && (
+                    <View style={{ width: "100%", height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.15)", overflow: "hidden", flexDirection: "row" }}>
+                      <View style={{ flex: holdProgress, height: 6, backgroundColor: "#5B3DFF" }} />
+                      <View style={{ flex: 100 - holdProgress, height: 6 }} />
+                    </View>
+                  )}
+
+                  {/* Mic button — only if current round isn't done yet */}
+                  {!(debateRound === 1 ? debateRound1Done : debateRound2Done) && (
+                    <RNPressable
+                      onPress={taskSpeech.supported ? startDebateRecording : undefined}
+                      onPressIn={!taskSpeech.supported ? () => startHoldRecord(() => {
+                        setDebateFeedback("Recorded ✓");
+                        if (debateRoundRef.current === 1) setDebateRound1Done(true); else setDebateRound2Done(true);
+                      }) : undefined}
+                      onPressOut={!taskSpeech.supported ? cancelHoldRecord : undefined}
+                      disabled={debateRecording}
+                      style={[S.micBtn, { backgroundColor: debateRecording ? "#5B3DFF" : "rgba(91,61,255,0.25)" }]}
+                    >
+                      <Feather name={debateRecording ? "mic" : "mic-off"} size={30} color={debateRecording ? "#FFFFFF" : "#9B8FFF"} />
+                    </RNPressable>
+                  )}
+
+                  <Text style={S.hint}>
+                    {debateRound === 1
+                      ? "Give your opening argument for your side."
+                      : "Respond to the challenge — defend your side."}
+                  </Text>
+                </>
+              )}
+            </View>
+
+            <View style={{ gap: 10 }}>
+              {debateRound === 1 && debateRound1Done ? (
+                <RNPressable onPress={advanceToRebuttal} style={S.purpleBtn}>
+                  <Text style={S.purpleBtnTxt}>Next: face the challenge →</Text>
+                </RNPressable>
+              ) : debateRound === 2 && debateRound2Done ? (
+                <RNPressable onPress={() => { void completeDebateTask(); }} style={S.greenBtn}>
+                  <Text style={S.greenBtnTxt}>Complete task (+15 coins)</Text>
+                </RNPressable>
+              ) : null}
+              <RNPressable onPress={closeDebateOverlay} style={{ paddingVertical: 12, alignItems: "center" }}>
+                <Text style={{ color: "rgba(255,255,255,0.35)", fontFamily: "Inter_500Medium", fontSize: 14 }}>Cancel</Text>
+              </RNPressable>
+            </View>
+          </View>
+        )}
+
+        {/* ═══════════════════════ Prompt overlay (explain / roleplay / word-use) ═══════════════════════ */}
+        {promptOpen && (
+          <View style={{ ...overlayBase, justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 20 }}>{promptOpen.heading}</Text>
+              <RNPressable onPress={closePromptOverlay} hitSlop={12} style={S.closeBtn}>
+                <Feather name="x" size={18} color="#FFFFFF" />
+              </RNPressable>
+            </View>
+
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 22 }}>
+              <View style={{ backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 20, padding: 24, width: "100%" }}>
+                <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: promptOpen.kind === "wordUse" ? 30 : 17, textAlign: "center", lineHeight: 26 }}>
+                  {promptOpen.promptText}
+                </Text>
+                {promptOpen.subtext ? (
+                  <Text style={{ color: "#FFFFFF", opacity: 0.65, fontFamily: "Inter_400Regular", fontSize: 13, textAlign: "center", marginTop: 12, lineHeight: 20 }}>
+                    {promptOpen.subtext}
+                  </Text>
+                ) : null}
+              </View>
+
+              {promptFeedback ? (
+                <View style={{ backgroundColor: "rgba(52,210,125,0.15)", borderRadius: 14, padding: 14, width: "100%", flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Feather name="check-circle" size={18} color="#34D27D" />
+                  <Text style={{ color: "#34D27D", fontFamily: "Inter_500Medium", fontSize: 14, flex: 1 }} numberOfLines={2}>{promptFeedback}</Text>
+                </View>
+              ) : promptRecording ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: "#E5484D" }} />
+                  <Text style={{ color: "#FFFFFF", opacity: 0.75, fontFamily: "Inter_500Medium", fontSize: 14 }}>Listening…</Text>
+                </View>
+              ) : taskSpeech.error ? (
+                <Text style={S.errTxt}>{taskSpeech.error} — tap mic to try again</Text>
+              ) : null}
+
+              {!taskSpeech.supported && holdProgress > 0 && holdProgress < 100 && taskTargetRef.current === "prompt" && (
+                <View style={{ width: "100%", height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.15)", overflow: "hidden", flexDirection: "row" }}>
+                  <View style={{ flex: holdProgress, height: 6, backgroundColor: "#5B3DFF" }} />
+                  <View style={{ flex: 100 - holdProgress, height: 6 }} />
+                </View>
+              )}
+
+              {!promptDone && (
+                <RNPressable
+                  onPress={taskSpeech.supported ? startPromptRecording : undefined}
+                  onPressIn={!taskSpeech.supported ? () => startHoldRecord(() => { setPromptFeedback("Recorded ✓"); setPromptDone(true); }) : undefined}
+                  onPressOut={!taskSpeech.supported ? cancelHoldRecord : undefined}
+                  disabled={promptRecording}
+                  style={[S.micBtn, { backgroundColor: promptRecording ? "#5B3DFF" : "rgba(91,61,255,0.25)" }]}
+                >
+                  <Feather name={promptRecording ? "mic" : "mic-off"} size={30} color={promptRecording ? "#FFFFFF" : "#9B8FFF"} />
+                </RNPressable>
+              )}
+
+              <Text style={S.hint}>{promptOpen.hint}</Text>
+            </View>
+
+            <View style={{ gap: 10 }}>
+              {promptDone ? (
+                <RNPressable onPress={() => { void completePromptTask(); }} style={S.greenBtn}>
+                  <Text style={S.greenBtnTxt}>Complete task (+{promptOpen.reward} coins)</Text>
+                </RNPressable>
+              ) : null}
+              <RNPressable onPress={closePromptOverlay} style={{ paddingVertical: 12, alignItems: "center" }}>
+                <Text style={{ color: "rgba(255,255,255,0.35)", fontFamily: "Inter_500Medium", fontSize: 14 }}>Cancel</Text>
+              </RNPressable>
+            </View>
+          </View>
+        )}
+
+        {/* ═══════════════════════ Main scroll list ═══════════════════════ */}
         <ScrollView
           contentContainerStyle={{ paddingTop: Platform.OS === "web" ? 24 : 16, paddingBottom: insets.bottom + 32, paddingHorizontal: 20 }}
           showsVerticalScrollIndicator={false}
@@ -721,85 +1218,26 @@ export default function TasksScreen() {
             </View>
           </Card>
 
-          {/* Task list */}
-          <View style={{ gap: 10, marginTop: 18 }}>
-            {DAILY_TASKS.map((t) => {
-              const isDone = state.completedTasks.includes(t.id);
-              const isGreetTask = t.id === "task-greet-5";
-
-              let actionLabel = "Start";
-              if (t.id === "task-self-intro") actionLabel = "Record";
-              else if (t.id === "task-listen-podcast") actionLabel = "Practice";
-              else if (t.id === "task-learn-words") actionLabel = "Quiz";
-              else if (t.id === "task-tongue-twister") actionLabel = "Record";
-              else if (t.id === "task-real-talk") actionLabel = "Start call";
-              else if (isGreetTask) actionLabel = greetCount > 0 ? "Continue" : "Call now";
-
-              return (
-                <Card key={t.id}>
-                  <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
-                    {/* Icon */}
-                    <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: isDone ? colors.muted : TYPE_BG[t.type], alignItems: "center", justifyContent: "center" }}>
-                      <Feather name={isDone ? "check" : TYPE_ICONS[t.type]} size={20} color={isDone ? colors.mutedForeground : TYPE_FG[t.type]} />
-                    </View>
-
-                    {/* Body */}
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color: colors.foreground }}>{t.title}</Text>
-                        {isDone && <Feather name="check-circle" size={14} color={colors.success} />}
-                      </View>
-                      <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground, marginTop: 4, lineHeight: 18 }}>{t.description}</Text>
-
-                      {/* Task 1: 5-bubble progress (replaces numeric counter) */}
-                      {isGreetTask && !isDone && (
-                        <View style={{ marginTop: 10 }}>
-                          <View style={{ flexDirection: "row", gap: 8 }}>
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <View key={i} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: i < greetCount ? "#5B3DFF" : "rgba(91,61,255,0.1)", borderWidth: 1.5, borderColor: i < greetCount ? "#5B3DFF" : "rgba(91,61,255,0.3)", alignItems: "center", justifyContent: "center" }}>
-                                {i < greetCount
-                                  ? <Feather name="check" size={13} color="#FFFFFF" />
-                                  : <Feather name="user" size={12} color="rgba(91,61,255,0.4)" />}
-                              </View>
-                            ))}
-                          </View>
-                          <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.mutedForeground, marginTop: 6 }}>
-                            Each completed call counts as one greeting ({greetCount}/5).
-                          </Text>
-                        </View>
-                      )}
-
-                      {/* Other tasks: clock + coins */}
-                      {!isGreetTask && (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                            <Feather name="clock" size={11} color={colors.mutedForeground} />
-                            <Text style={{ fontFamily: "Inter_500Medium", fontSize: 11, color: colors.mutedForeground }}>{t.minutes} min</Text>
-                          </View>
-                          <CoinBadge amount={t.reward} size="sm" />
-                        </View>
-                      )}
-                    </View>
-
-                    {/* Action button */}
-                    {isDone ? (
-                      <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.muted }}>
-                        <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: colors.mutedForeground }}>Done ✓</Text>
-                      </View>
-                    ) : (
-                      <Pressable onPress={() => handlePress(t)}>
-                        <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: isGreetTask && greetCount > 0 ? "#5B3DFF22" : colors.primary, borderWidth: isGreetTask && greetCount > 0 ? 1 : 0, borderColor: colors.primary }}>
-                          <Text style={{ color: isGreetTask && greetCount > 0 ? colors.primary : "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 12 }}>
-                            {actionLabel}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    )}
+          {/* Task list, grouped by skill category */}
+          {CATEGORY_ORDER.map((cat) => {
+            const tasksInCat = DAILY_TASKS.filter(t => t.category === cat);
+            if (tasksInCat.length === 0) return null;
+            const catDone = tasksInCat.filter(t => state.completedTasks.includes(t.id)).length;
+            return (
+              <View key={cat} style={{ marginTop: 22 }}>
+                <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color: colors.foreground }}>{CATEGORY_META[cat].label}</Text>
+                    <Text style={{ fontFamily: "Inter_400Regular", fontSize: 12, color: colors.mutedForeground, marginTop: 2 }}>{CATEGORY_META[cat].blurb}</Text>
                   </View>
-                </Card>
-              );
-            })}
-          </View>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: colors.mutedForeground }}>{catDone}/{tasksInCat.length}</Text>
+                </View>
+                <View style={{ gap: 10 }}>
+                  {tasksInCat.map((t) => renderTaskCard(t))}
+                </View>
+              </View>
+            );
+          })}
         </ScrollView>
       </View>
     </>

@@ -119,6 +119,7 @@ function tryMatch() {
 
 // ── Push-based calling helpers ────────────────────────────────────────────────
 function findAvailableReceiver(callerSocketId: string, excluded: Set<string>): ConnectedUser | null {
+  logger.info({ callerSocketId, connectedUsers: Array.from(connected.values()).map(u => ({ socketId: u.socketId, userId: u.userId, status: u.status, wantsCalls: u.wantsCalls, inCallWith: u.inCallWith })) }, "findAvailableReceiver state");
   const candidates = Array.from(connected.values()).filter(
     (u) => u.socketId !== callerSocketId && u.status === "live" && u.wantsCalls && !u.inCallWith && !excluded.has(u.socketId),
   );
@@ -361,3 +362,4 @@ export function initSocket(httpServer: HttpServer) {
 
   logger.info("Socket.IO initialized on path /api/socket.io");
 }
+

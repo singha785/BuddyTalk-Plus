@@ -77,7 +77,7 @@ function getSocketUrl(): string {
     if (__DEV__) console.warn("[SocketContext] EXPO_PUBLIC_DOMAIN not set, falling back to localhost");
     return "http://localhost:80";
   }
-  return typeof window !== "undefined" ? window.location.origin : "";
+  return __DEV__ ? "http://localhost:8080" : window.location.origin;
 }
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
@@ -258,3 +258,4 @@ export function useSocket(): SocketContextValue {
   if (!ctx) throw new Error("useSocket must be used within SocketProvider");
   return ctx;
 }
+

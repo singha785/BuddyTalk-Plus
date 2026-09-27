@@ -1,0 +1,209 @@
+warning: in the working copy of 'pnpm-lock.yaml', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/pnpm-lock.yaml b/pnpm-lock.yaml[m
+[1mindex 5943463..296d3eb 100644[m
+[1m--- a/pnpm-lock.yaml[m
+[1m+++ b/pnpm-lock.yaml[m
+[36m@@ -154,6 +154,12 @@[m [mimporters:[m
+ [m
+   .:[m
+     devDependencies:[m
+[32m+[m[32m      '@esbuild/win32-x64':[m
+[32m+[m[32m        specifier: 0.27.3[m
+[32m+[m[32m        version: 0.27.3[m
+[32m+[m[32m      lightningcss-win32-x64-msvc:[m
+[32m+[m[32m        specifier: 1.31.1[m
+[32m+[m[32m        version: 1.31.1[m
+       prettier:[m
+         specifier: ^3.8.1[m
+         version: 3.8.1[m
+[36m@@ -180,7 +186,7 @@[m [mimporters:[m
+         version: 0.45.2(@types/pg@8.18.0)(pg@8.20.0)[m
+       express:[m
+         specifier: ^5[m
+[31m-        version: 5.2.1[m
+[32m+[m[32m        version: 5.2.1(supports-color@8.1.1)[m
+       pino:[m
+         specifier: ^9[m
+         version: 9.14.0[m
+[36m@@ -189,7 +195,7 @@[m [mimporters:[m
+         version: 10.5.0[m
+       socket.io:[m
+         specifier: ^4.8.3[m
+[31m-        version: 4.8.3[m
+[32m+[m[32m        version: 4.8.3(supports-color@8.1.1)[m
+       zod:[m
+         specifier: 'catalog:'[m
+         version: 3.25.76[m
+[36m@@ -307,7 +313,7 @@[m [mimporters:[m
+         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)[m
+       '@replit/vite-plugin-cartographer':[m
+         specifier: 'catalog:'[m
+[31m-        version: 0.5.1[m
+[32m+[m[32m        version: 0.5.1(supports-color@8.1.1)[m
+       '@replit/vite-plugin-runtime-error-modal':[m
+         specifier: 'catalog:'[m
+         version: 0.0.6[m
+[36m@@ -325,7 +331,7 @@[m [mimporters:[m
+         version: 19.2.3(@types/react@19.2.14)[m
+       '@vitejs/plugin-react':[m
+         specifier: 'catalog:'[m
+[31m-        version: 5.1.4(vite@7.3.2(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.2))[m
+[32m+[m[32m        version: 5.1.4(supports-color@8.1.1)(vite@7.3.2(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.2))[m
+       chokidar:[m
+         specifier: ^4.0.3[m
+         version: 4.0.3[m
+[36m@@ -409,7 +415,7 @@[m [mimporters:[m
+         version: 13.0.0(expo@54.0.33)[m
+       expo-clipboard:[m
+         specifier: ~8.0.8[m
+[31m-        version: 8.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 8.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-local-authentication:[m
+         specifier: ~17.0.9[m
+         version: 17.0.9(expo@54.0.33)[m
+[36m@@ -418,32 +424,32 @@[m [mimporters:[m
+         version: 14.0.8(expo@54.0.33)[m
+       react-native-incall-manager:[m
+         specifier: ^4.2.2[m
+[31m-        version: 4.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 4.2.2(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))[m
+       react-native-webrtc:[m
+         specifier: 124.0.6[m
+[31m-        version: 124.0.6(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 124.0.6(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(supports-color@8.1.1)[m
+       socket.io-client:[m
+         specifier: ^4.8.3[m
+[31m-        version: 4.8.3[m
+[32m+[m[32m        version: 4.8.3(supports-color@8.1.1)[m
+     devDependencies:[m
+       '@babel/core':[m
+         specifier: ^7.25.2[m
+[31m-        version: 7.29.0[m
+[32m+[m[32m        version: 7.29.0(supports-color@8.1.1)[m
+       '@expo-google-fonts/inter':[m
+         specifier: ^0.4.0[m
+         version: 0.4.2[m
+       '@expo/cli':[m
+         specifier: 54.0.23[m
+[31m-        version: 54.0.23(expo-router@6.0.23)(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(typescript@5.9.3)[m
+[32m+[m[32m        version: 54.0.23(expo-router@6.0.23)(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)[m
+       '@expo/ngrok':[m
+         specifier: ^4.1.0[m
+         version: 4.1.3[m
+       '@expo/vector-icons':[m
+         specifier: ^15.0.3[m
+[31m-        version: 15.1.1(expo-font@14.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 15.1.1(expo-font@14.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       '@react-native-async-storage/async-storage':[m
+         specifier: 2.2.0[m
+[31m-        version: 2.2.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 2.2.0(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))[m
+       '@stardazed/streams-text-encoding':[m
+         specifier: ^1.0.2[m
+         version: 1.0.2[m
+[36m@@ -467,55 +473,55 @@[m [mimporters:[m
+         version: 19.0.0-beta-ebf51a3-20250411[m
+       expo:[m
+         specifier: ~54.0.27[m
+[31m-        version: 54.0.33(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)[m
+[32m+[m[32m        version: 54.0.33(@babel/core@7.29.0(supports-color@8.1.1))(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)(typescript@5.9.3)[m
+       expo-blur:[m
+         specifier: ~15.0.8[m
+[31m-        version: 15.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 15.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-constants:[m
+         specifier: ~18.0.11[m
+[31m-        version: 18.0.13(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 18.0.13(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(supports-color@8.1.1)[m
+       expo-font:[m
+         specifier: ~14.0.10[m
+[31m-        version: 14.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 14.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-glass-effect:[m
+         specifier: ~0.1.4[m
+[31m-        version: 0.1.9(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 0.1.9(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-haptics:[m
+         specifier: ~15.0.8[m
+         version: 15.0.8(expo@54.0.33)[m
+       expo-image:[m
+         specifier: ~3.0.11[m
+[31m-        version: 3.0.11(expo@54.0.33)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 3.0.11(expo@54.0.33)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-image-picker:[m
+         specifier: ~17.0.9[m
+         version: 17.0.10(expo@54.0.33)[m
+       expo-linear-gradient:[m
+         specifier: ~15.0.8[m
+[31m-        version: 15.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 15.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-linking:[m
+         specifier: ~8.0.10[m
+[31m-        version: 8.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 8.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)[m
+       expo-location:[m
+         specifier: ~19.0.8[m
+         version: 19.0.8(expo@54.0.33)[m
+       expo-router:[m
+         specifier: ~6.0.17[m
+[31m-        version: 6.0.23(@types/react-dom@19.1.11(@types/react@19.1.17))(@types/react@19.1.17)(expo-constants@18.0.13)(expo-linking@8.0.11)(expo@54.0.33)(react-dom@19.1.0(react@19.1.0))(react-native-gesture-handler@2.28.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-screens@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 6.0.23(fdeb25d8fb73dedc504d7109eb7514ad)[m
+       expo-splash-screen:[m
+         specifier: ~31.0.12[m
+[31m-        version: 31.0.13(expo@54.0.33)(typescript@5.9.3)[m
+[32m+[m[32m        version: 31.0.13(expo@54.0.33)(supports-color@8.1.1)(typescript@5.9.3)[m
+       expo-status-bar:[m
+         specifier: ~3.0.9[m
+[31m-        version: 3.0.9(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 3.0.9(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       expo-symbols:[m
+         specifier: ~1.0.8[m
+[31m-        version: 1.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 1.0.8(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))[m
+       expo-system-ui:[m
+         specifier: ~6.0.9[m
+[31m-        version: 6.0.9(expo@54.0.33)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 6.0.9(expo@54.0.33)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(supports-color@8.1.1)[m
+       expo-web-browser:[m
+         specifier: ~15.0.10[m
+[31m-        version: 15.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))[m
+[32m+[m[32m        version: 15.0.10(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))[m
+       react:[m
+         specifier: 'catalog:'[m
+         version: 19.1.0[m
+[36m@@ -524,31 +530,31 @@[m [mimporters:[m
+         version: 19.1.0(react@19.1.0)[m
+       react-native:[m
+         specifier: 0.81.5[m
+[31m-        version: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)[m
+[32m+[m[32m        version: 0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1)[m
+       react-native-gesture-handler:[m
+         specifier: ~2.28.0[m
+[31m-        version: 2.28.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 2.28.0(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-keyboard-controller:[m
+         specifier: 1.18.5[m
+[31m-        version: 1.18.5(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 1.18.5(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.0(supports-color@8.1.1))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-reanimated:[m
+         specifier: ~4.1.1[m
+[31m-        version: 4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.0(supports-color@8.1.1))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-safe-area-context:[m
+         specifier: ~5.6.0[m
+[31m-        version: 5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 5.6.2(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-screens:[m
+         specifier: ~4.16.0[m
+[31m-        version: 4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 4.16.0(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-svg:[m
+         specifier: 15.12.1[m
+[31m-        version: 15.12.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)[m
+[32m+[m[32m        version: 15.12.1(react-native@0.81.5(@babel/core@7.29.0(supports-color@8.1.1))(@types/react@19.1.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)[m
+       react-native-web:[m
+         specifier: ^0.21.0[m
+         version: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)[m
+       react-native-worklets:[m
+         specifier: 0.5.1[m
+[31m-        version: 0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.

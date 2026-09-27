@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+﻿import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef } from "react";
@@ -27,11 +27,13 @@ import { getPresence, statusColor } from "@/data/presence";
 import { DAILY_TASKS } from "@/data/tasks";
 import { useColors } from "@/hooks/useColors";
 import { usePresenceTick } from "@/hooks/usePresenceTick";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Home() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { state, freeMinutesRemaining } = useApp();
+  const { t } = useTranslation();
   const { userOnline, setUserOnlineStatus } = useSocket();
   const now = usePresenceTick();
 
@@ -202,7 +204,7 @@ export default function Home() {
                     color: colors.mutedForeground,
                   }}
                 >
-                  {greeting} 👋
+                  {greeting} ðŸ‘‹
                 </Text>
                 <Text
                   style={{
@@ -247,7 +249,7 @@ export default function Home() {
                     letterSpacing: 0.3,
                   }}
                 >
-                  {userOnline ? "Online" : "Offline"}
+                  {userOnline ? t("online") : t("offline")}
                 </Text>
               </RNPressable>
               <View
@@ -261,7 +263,7 @@ export default function Home() {
                   borderRadius: 999,
                 }}
               >
-                <Text style={{ fontSize: 14 }}>🔥</Text>
+                <Text style={{ fontSize: 14 }}>ðŸ”¥</Text>
                 <Text
                   style={{
                     fontFamily: "Inter_700Bold",
@@ -276,7 +278,7 @@ export default function Home() {
             </View>
           </View>
 
-          {/* HERO — Talk now */}
+          {/* HERO â€” Talk now */}
           <View style={{ marginTop: 22 }}>
             <Pressable onPress={() => router.push("/practice")}>
               <View
@@ -380,7 +382,7 @@ export default function Home() {
                       letterSpacing: -0.5,
                     }}
                   >
-                    Speak English.{"\n"}Earn confidence.
+                    {t("speakEnglishEarnConfidence")}
                   </Text>
                   <Text
                     style={{
@@ -392,7 +394,7 @@ export default function Home() {
                       lineHeight: 18,
                     }}
                   >
-                    {freeMinutesRemaining} free minutes left today · Tap to start a live call
+                    {freeMinutesRemaining} {t("freeMinutesLeft")}
                   </Text>
 
                   {/* Big call button */}
@@ -438,7 +440,7 @@ export default function Home() {
                           fontSize: 15,
                         }}
                       >
-                        Start a free call
+                        {t("startFreeCall")}
                       </Text>
                     </View>
                     {/* Live mentor avatars */}
@@ -488,7 +490,7 @@ export default function Home() {
                           letterSpacing: 0.4,
                         }}
                       >
-                        TODAY'S TALK TIME
+                        {t("todaysTalkTime")}
                       </Text>
                       <Text
                         style={{
@@ -512,7 +514,7 @@ export default function Home() {
             </Pressable>
           </View>
 
-          {/* Quick actions — gradient tiles */}
+          {/* Quick actions â€” gradient tiles */}
           <View
             style={{
               flexDirection: "row",
@@ -522,27 +524,42 @@ export default function Home() {
           >
             <QuickAction
               icon="zap"
-              label="Tasks"
+              label={t("tasks")}
               gradient={["#FFB47A", "#FF7A45"]}
               onPress={() => router.push("/tasks")}
             />
             <QuickAction
               icon="users"
-              label="Mentors"
+              label={t("mentors")}
               gradient={["#3FE1B0", "#0E9F7A"]}
               onPress={() => router.push("/(tabs)/mentors")}
             />
             <QuickAction
               icon="book-open"
-              label="Lessons"
+              label={t("lessons")}
               gradient={["#7E62FF", "#4A2BE0"]}
               onPress={() => router.push("/(tabs)/learn")}
             />
             <QuickAction
               icon="gift"
-              label="Wallet"
+              label={t("wallet")}
               gradient={["#FFD66B", "#E59611"]}
               onPress={() => router.push("/(tabs)/wallet")}
+            />
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
+            <QuickAction
+              icon="briefcase"
+              label="AI Interview"
+              gradient={["#5B3DFF", "#3A1F9E"]}
+              onPress={() => router.push("/choose-interview")}
             />
           </View>
 
@@ -550,7 +567,7 @@ export default function Home() {
           {liveMentors.length > 0 ? (
             <View style={{ marginTop: 26 }}>
               <SectionHeaderRow
-                title="Live mentors right now"
+                title={t("liveMentors")}
                 badge={`${liveMentors.length}`}
                 actionLabel="See all"
                 onAction={() => router.push("/(tabs)/mentors")}
@@ -684,7 +701,7 @@ export default function Home() {
           {/* Daily mission */}
           <View style={{ marginTop: 26 }}>
             <SectionHeaderRow
-              title="Today's missions"
+              title={t("todaysMissions")}
               actionLabel="See all"
               onAction={() => router.push("/tasks")}
             />
@@ -723,7 +740,7 @@ export default function Home() {
                         textAlign: "center",
                       }}
                     >
-                      Come back tomorrow for new ones — your streak is safe.
+                      Come back tomorrow for new ones â€” your streak is safe.
                     </Text>
                   </View>
                 </Card>
@@ -783,7 +800,7 @@ export default function Home() {
                               marginTop: 3,
                             }}
                           >
-                            {t.minutes} min · earn coins
+                            {t.minutes} min Â· earn coins
                           </Text>
                         </View>
                         <CoinBadge amount={t.reward} size="sm" />
@@ -797,7 +814,7 @@ export default function Home() {
 
           {/* AI Coach */}
           <View style={{ marginTop: 26 }}>
-            <SectionHeaderRow title="Your AI coach" />
+            <SectionHeaderRow title={t("aiCoach")} />
             <View style={{ marginTop: 12 }}>
               <View
                 style={{
@@ -876,7 +893,7 @@ export default function Home() {
           {/* Lessons */}
           <View style={{ marginTop: 26 }}>
             <SectionHeaderRow
-              title="Recommended lessons"
+              title={t("recommendedLessons")}
               actionLabel="Browse"
               onAction={() => router.push("/(tabs)/learn")}
             />
@@ -975,7 +992,7 @@ export default function Home() {
 
           {/* Growth */}
           <View style={{ marginTop: 26 }}>
-            <SectionHeaderRow title="Your growth" />
+            <SectionHeaderRow title={t("yourGrowth")} />
 
             {/* Real stats row */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
@@ -994,7 +1011,7 @@ export default function Home() {
               <GrowthTile
                 icon="book-open"
                 value={state.completedLessons.length}
-                label="Lessons"
+                label={t("lessons")}
                 colors={colors}
               />
             </View>
@@ -1034,7 +1051,7 @@ export default function Home() {
                           marginTop: 2,
                         }}
                       >
-                        {weeklyCallCount} call{weeklyCallCount !== 1 ? "s" : ""} · {weeklyMins} min{weeklyMins !== 1 ? "s" : ""} spoken
+                        {weeklyCallCount} call{weeklyCallCount !== 1 ? "s" : ""} Â· {weeklyMins} min{weeklyMins !== 1 ? "s" : ""} spoken
                       </Text>
                     </View>
                     {state.streak > 0 ? (
@@ -1050,7 +1067,7 @@ export default function Home() {
                           paddingVertical: 5,
                         }}
                       >
-                        <Text style={{ fontSize: 14 }}>🔥</Text>
+                        <Text style={{ fontSize: 14 }}>ðŸ”¥</Text>
                         <Text
                           style={{
                             fontFamily: "Inter_700Bold",
@@ -1098,22 +1115,22 @@ export default function Home() {
                 ) : (
                   <>
                     <ProgressRow
-                      label="Fluency"
-                      emoji="🗣️"
+                      label={t("fluency")}
+                      emoji="ðŸ—£ï¸"
                       value={state.fluency}
                       color={colors.primary}
                     />
                     <View style={{ height: 16 }} />
                     <ProgressRow
-                      label="Pronunciation"
-                      emoji="🎯"
+                      label={t("pronunciation")}
+                      emoji="ðŸŽ¯"
                       value={state.pronunciation}
                       color={colors.accent}
                     />
                     <View style={{ height: 16 }} />
                     <ProgressRow
-                      label="Confidence"
-                      emoji="💪"
+                      label={t("confidence")}
+                      emoji="ðŸ’ª"
                       value={state.confidence}
                       color="#0E9F7A"
                     />
@@ -1189,7 +1206,7 @@ function SectionHeaderRow({
               color: colors.primary,
             }}
           >
-            {actionLabel} →
+            {actionLabel} â†’
           </Text>
         </Pressable>
       ) : null}
@@ -1362,3 +1379,6 @@ function GrowthTile({
     </View>
   );
 }
+
+
+

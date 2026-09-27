@@ -1,0 +1,8 @@
+﻿import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack } from "expo-router";
+import { Audio } from "expo-av";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AvatarViewer from "@/components/AvatarViewer";
