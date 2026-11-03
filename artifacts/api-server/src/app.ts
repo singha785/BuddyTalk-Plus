@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+﻿import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -36,7 +36,7 @@ const allowedOrigins = isDev
 
 app.use(
   cors({
-    origin: isDev ? ["http://localhost:8081", "http://localhost:8082", "http://localhost:8083"] : allowedOrigins,
+    origin: isDev ? true : allowedOrigins,
     credentials: true,
   }),
 );
@@ -47,7 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-  const message = err instanceof Error ? err.message : "Internal server error";
+  const message = err instanceof Error ? err.message : String((err as any)?.message ?? (err as any)?.error?.message ?? JSON.stringify(err) ?? "Internal server error");
   logger.error({ err }, "Unhandled server error");
   if (!res.headersSent) {
     res.status(500).json({ error: "server_error", message });

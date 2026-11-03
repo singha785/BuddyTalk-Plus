@@ -1,6 +1,6 @@
-﻿import { Router, type IRouter } from "express";
+import { Router, type IRouter } from "express";
 import OpenAI from "openai";
-import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "edge-tts-node";
 
 const router: IRouter = Router();
 
@@ -128,18 +128,137 @@ router.post("/avatar/speech", async (req, res, next) => {
       return;
     }
 
-    const tts = new MsEdgeTTS();
+    const tts = new MsEdgeTTS({});
     await tts.setMetadata("en-IN-NeerjaNeural", OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const { audioStream } = tts.toStream(text);
+    const result: any = await (tts as any).toStream(text, { rate: "-4%", pitch: "+15Hz", volume: "+0%" }); const audioStream = result.audioStream ?? result;
 
     res.setHeader("Content-Type", "audio/mpeg");
 
     audioStream.on("data", (chunk: Buffer) => res.write(chunk));
     audioStream.on("end", () => res.end());
-    audioStream.on("error", (err: Error) => next(err));
+    audioStream.on("error", (err: Error) => { console.error("TTS stream error:", err); next(err); });
+  } catch (err: any) {
+    console.error("TTS speech error:", err, typeof err, err && err.message); next(err);
+  }
+});
+
+
+type ChatMessage = { role: "ai" | "user"; text: string };
+
+router.post("/avatar/chat-reply", async (req, res, next) => {
+  try {
+    const history: ChatMessage[] = Array.isArray(req.body?.history) ? req.body.history : [];
+    const situation = String(req.body?.situation || "job_interview");
+
+    if (history.length === 0) {
+      res.status(400).json({ error: "history is required" });
+      return;
+    }
+
+    const systemPrompt = `You are roleplaying as a warm, friendly English conversation partner on a phone/voice call, helping a Hindi-speaking learner practice spoken English in a "${situation}" scenario.
+
+Speak naturally like a real person on a call — casual, warm, encouraging. Occasionally include small, natural imperfections a real person might have (a brief filler word, a slight rephrase), but keep it mostly clear and understandable — this is for learners, so stay easy to follow.
+
+Keep each reply SHORT (1-3 sentences), like real spoken conversation, not an essay.
+
+If the user directly and explicitly asks "are you an AI", "are you a bot", "are you real", or something clearly equivalent, answer honestly and briefly that you are an AI practice partner — do not deny it. Otherwise, just continue the natural conversation.
+
+Reply with ONLY your next spoken line, no labels, no quotes, no stage directions.`;
+
+    const messages = [
+      { role: "system" as const, content: systemPrompt },
+      ...history.map((h) => ({
+        role: h.role === "ai" ? ("assistant" as const) : ("user" as const),
+        content: h.text,
+      })),
+    ];
+
+    const completion = await openrouter.chat.completions.create({
+      model: "openrouter/free",
+      messages,
+      temperature: 0.8,
+    });
+
+    const reply = completion.choices[0]?.message?.content?.trim() || "";
+
+    if (!reply) {
+      res.status(502).json({ error: "empty_response" });
+      return;
+    }
+
+    res.json({ reply });
   } catch (err) {
     next(err);
   }
 });
 
+
+router.post("/avatar/check-sentence", async (req, res, next) => {
+  try {
+    const text = String(req.body?.text || "").trim();
+
+    if (!text) {
+      res.status(400).json({ error: "text is required" });
+      return;
+    }
+    if (text.length > 400) {
+      res.status(400).json({ error: "text_too_long" });
+      return;
+    }
+
+    const systemPrompt = `You are a friendly English teacher helping a Hindi-speaking learner. The learner typed an English sentence. Do these things:
+1. Translate the sentence into natural, simple Hindi written in Devanagari script. Translate what the learner actually wrote, even if it has mistakes.
+2. Decide whether the English is correct (grammar, spelling, word choice). Do NOT treat a missing capital letter or missing final punctuation as a mistake.
+3. If it is incorrect, give the corrected sentence and a one-line tip in simple Hinglish (Hindi written in Roman letters) explaining the main mistake.
+
+Respond with ONLY a JSON object, no markdown, no extra text, exactly in this shape:
+{"hindi":"...","correct":true,"corrected":"...","tip":"..."}
+If the sentence is already correct, set "correct" to true, "corrected" to the same sentence, and "tip" to an empty string.`;
+
+    const completion = await openrouter.chat.completions.create({
+      model: "openrouter/free",
+      messages: [
+        { role: "system" as const, content: systemPrompt },
+        { role: "user" as const, content: text },
+      ],
+      temperature: 0.2,
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() || "";
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      res.status(502).json({ error: "bad_format" });
+      return;
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      res.status(502).json({ error: "bad_format" });
+      return;
+    }
+
+    const hindi = typeof parsed.hindi === "string" ? parsed.hindi.trim() : "";
+    if (!hindi) {
+      res.status(502).json({ error: "empty_response" });
+      return;
+    }
+
+    res.json({
+      hindi,
+      correct: parsed.correct !== false,
+      corrected:
+        typeof parsed.corrected === "string" && parsed.corrected.trim()
+          ? parsed.corrected.trim()
+          : text,
+      tip: typeof parsed.tip === "string" ? parsed.tip.trim() : "",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 export default router;
+
+
+
