@@ -1,10 +1,12 @@
-﻿import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { customFetch } from "@workspace/api-client-react";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -46,6 +48,17 @@ export type LessonScoreEntry = {
   lastPracticed: string;
 };
 
+export type WalletTx = {
+  id: string;
+  delta: number;
+  reason: string;
+  note: string | null;
+  balanceAfter: number;
+  createdAt: string;
+};
+type WalletResponse = { balance: number; earnedToday: number; dailyEarnCap: number; transactions: WalletTx[] };
+type EarnResponse = { granted: number; balance: number; duplicate?: boolean; limited?: string };
+
 export type AppState = {
   language: AppLanguage;
   profile: UserProfile;
@@ -73,10 +86,11 @@ export type AppState = {
 const FREE_DAILY_MINUTES = 20;
 const DAILY_AD_LIMIT = 10;
 const COIN_AD_REWARD = 15;
-const DAILY_LOGIN_BONUS = 100;
+// Display only. The real coin amounts and daily caps live on the server (api-server/src/routes/wallet.ts).
+const DAILY_LOGIN_BONUS = 2;
 
 // Each user account gets its own isolated storage slot.
-// v2 because v1 used a global key â€” all v1 data is abandoned on next login.
+// v2 because v1 used a global key — all v1 data is abandoned on next login.
 const userStorageKey = (id: string) => `speakup.state.v2.${id}`;
 
 const todayKey = (): string => new Date().toISOString().slice(0, 10);
@@ -116,13 +130,17 @@ type AppContextValue = {
   ready: boolean;
   freeMinutesRemaining: number;
   adsRemainingToday: number;
+  /** Last wallet transactions, newest first (from the server ledger). */
+  transactions: WalletTx[];
+  /** Re-read balance and history from the server. */
+  refreshWallet: () => Promise<void>;
   completeOnboarding: (data: {
     name: string;
     goal: UserGoal;
     level: UserLevel;
   }) => Promise<void>;
   addCoins: (amount: number) => Promise<void>;
-  spendCoins: (amount: number) => Promise<boolean>;
+  spendCoins: (amount: number, reason?: string) => Promise<boolean>;
   watchAdReward: () => Promise<{ ok: boolean; reason?: string }>;
   consumeFreeMinutes: (minutes: number) => Promise<void>;
   recordCall: (entry: {
@@ -173,16 +191,61 @@ function bumpStreak(state: AppState): AppState {
   if (state.lastOpened === today) return state;
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const streak = state.lastOpened === yesterday ? state.streak + 1 : 1;
-  // Award daily login bonus every new day
-  return { ...state, lastOpened: today, streak, coins: state.coins + DAILY_LOGIN_BONUS };
+  // The daily login coins are granted by the server (see the load effect below).
+  return { ...state, lastOpened: today, streak };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user: authUser, ready: authReady, updateProfile: serverUpdateProfile } = useAuth();
   const [state, setState] = useState<AppState>(defaultState);
   const [ready, setReady] = useState<boolean>(false);
+  const [transactions, setTransactions] = useState<WalletTx[]>([]);
 
-  // â”€â”€ Load per-user state whenever auth resolves or the logged-in account changes â”€â”€
+  // The coin balance is owned by the server. coinsRef always holds the latest server balance
+  // so that saving other fields can never overwrite it with an old number.
+  const coinsRef = useRef<number>(0);
+  const userIdRef = useRef<string | undefined>(undefined);
+  userIdRef.current = authUser?.id;
+
+  const applyBalance = useCallback((balance: number) => {
+    coinsRef.current = balance;
+    setState((prev) => {
+      const next = { ...prev, coins: balance };
+      const uid = userIdRef.current;
+      if (uid) AsyncStorage.setItem(userStorageKey(uid), JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  const refreshWallet = useCallback(async () => {
+    if (!userIdRef.current) return;
+    try {
+      const w = await customFetch<WalletResponse>("/wallet", { method: "GET", responseType: "json" });
+      applyBalance(w.balance);
+      setTransactions(w.transactions ?? []);
+    } catch {
+      // offline: keep showing the last synced balance
+    }
+  }, [applyBalance]);
+
+  const serverEarn = useCallback(
+    async (reason: string, opts: { ref?: string; amount?: number; note?: string } = {}): Promise<EarnResponse | null> => {
+      try {
+        const r = await customFetch<EarnResponse>("/wallet/earn", {
+          method: "POST",
+          body: JSON.stringify({ reason, ...opts }),
+          responseType: "json",
+        });
+        applyBalance(r.balance);
+        return r;
+      } catch {
+        return null;
+      }
+    },
+    [applyBalance],
+  );
+
+  // ── Load per-user state whenever auth resolves or the logged-in account changes ──
   useEffect(() => {
     if (!authReady) return;
 
@@ -190,7 +253,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = authUser?.id;
 
     if (!userId) {
-      // Logged out â€” show clean default, no storage write
+      // Logged out — show clean default, no storage write
+      coinsRef.current = 0;
+      setTransactions([]);
       setState(defaultState);
       setReady(true);
       return;
@@ -216,10 +281,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             },
           };
           const rolled = bumpStreak(rollDailyResets(merged));
+          coinsRef.current = rolled.coins;
           setState(rolled);
           await AsyncStorage.setItem(key, JSON.stringify(rolled));
         } else {
-          // First open for this account â€” start fresh with their server profile
+          // First open for this account — start fresh with their server profile
           const initial = bumpStreak({
             ...defaultState,
             profile: {
@@ -230,6 +296,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               onboarded: !!authUser.onboarded,
             },
           });
+          coinsRef.current = initial.coins;
           setState(initial);
           await AsyncStorage.setItem(key, JSON.stringify(initial));
         }
@@ -238,11 +305,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } finally {
         setReady(true);
       }
+      // Coins: ask the server for the real balance, collect today's login coins, load history.
+      await serverEarn("daily_login");
+      await refreshWallet();
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authReady, authUser?.id]);
 
-  const persist = useCallback(async (next: AppState) => {
+  const persist = useCallback(async (incoming: AppState) => {
+    const next: AppState = { ...incoming, coins: coinsRef.current };
     setState(next);
     const userId = authUser?.id;
     if (!userId) return;
@@ -270,17 +341,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addCoins = useCallback<AppContextValue["addCoins"]>(
-    async (amount) => { await persist({ ...state, coins: state.coins + amount }); },
-    [state, persist],
+    async (amount) => {
+      await serverEarn("bonus", { amount, ref: `bonus-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
+    },
+    [serverEarn],
   );
 
   const spendCoins = useCallback<AppContextValue["spendCoins"]>(
-    async (amount) => {
-      if (state.coins < amount) return false;
-      await persist({ ...state, coins: state.coins - amount });
-      return true;
+    async (amount, reason = "spend") => {
+      if (coinsRef.current < amount) return false;
+      try {
+        const r = await customFetch<{ ok: boolean; balance: number }>("/wallet/spend", {
+          method: "POST",
+          body: JSON.stringify({ reason, amount, ref: `${reason}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }),
+          responseType: "json",
+        });
+        applyBalance(r.balance);
+        return r.ok !== false;
+      } catch {
+        return false;
+      }
     },
-    [state, persist],
+    [applyBalance],
   );
 
   const watchAdReward = useCallback<AppContextValue["watchAdReward"]>(async () => {
@@ -288,13 +370,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (rolled.adsWatchedToday >= DAILY_AD_LIMIT) {
       return { ok: false, reason: "Daily ad limit reached." };
     }
-    await persist({
-      ...rolled,
-      adsWatchedToday: rolled.adsWatchedToday + 1,
-      coins: rolled.coins + COIN_AD_REWARD,
+    const r = await serverEarn("ad", {
+      amount: COIN_AD_REWARD,
+      ref: `ad-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     });
+    if (!r) return { ok: false, reason: "Network problem. Please try again." };
+    if (!r.granted) return { ok: false, reason: "Daily coin limit reached. Come back tomorrow!" };
+    await persist({ ...rolled, adsWatchedToday: rolled.adsWatchedToday + 1 });
     return { ok: true };
-  }, [state, persist]);
+  }, [state, persist, serverEarn]);
 
   const consumeFreeMinutes = useCallback<AppContextValue["consumeFreeMinutes"]>(
     async (minutes) => {
@@ -361,9 +445,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const completeTask = useCallback<AppContextValue["completeTask"]>(
     async (taskId, reward) => {
       if (state.completedTasks.includes(taskId)) return;
-      await persist({ ...state, completedTasks: [...state.completedTasks, taskId], coins: state.coins + reward });
+      const r = await serverEarn("task", { ref: taskId, amount: reward, note: taskId });
+      // offline: leave the task open so the player can finish it again later
+      if (!r) return;
+      await persist({ ...state, completedTasks: [...state.completedTasks, taskId] });
     },
-    [state, persist],
+    [state, persist, serverEarn],
   );
 
   const completeLesson = useCallback<AppContextValue["completeLesson"]>(
@@ -412,16 +499,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const GREET_TASK_REWARD = 8;
       const alreadyComplete = state.completedTasks.includes(GREET_TASK_ID);
       const nowComplete = !alreadyComplete && greetedPartners.length >= 5;
+      if (nowComplete) await serverEarn("task", { ref: GREET_TASK_ID, amount: GREET_TASK_REWARD, note: GREET_TASK_ID });
       await persist({
         ...state,
         greetedPartners,
         completedTasks: nowComplete
           ? [...state.completedTasks, GREET_TASK_ID]
           : state.completedTasks,
-        coins: nowComplete ? state.coins + GREET_TASK_REWARD : state.coins,
       });
     },
-    [state, persist],
+    [state, persist, serverEarn],
   );
 
   const setLanguage = useCallback<AppContextValue["setLanguage"]>(
@@ -452,6 +539,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ready,
       freeMinutesRemaining,
       adsRemainingToday,
+      transactions,
+      refreshWallet,
       completeOnboarding,
       addCoins,
       spendCoins,
@@ -470,7 +559,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       resetAccount,
     };
   }, [
-    state, ready, completeOnboarding, addCoins, spendCoins, watchAdReward,
+    state, ready, transactions, refreshWallet, completeOnboarding, addCoins, spendCoins, watchAdReward,
     consumeFreeMinutes, recordCall, completeTask, completeLesson,
     savePronunciationScore, setPremium, setLanguage, trackGreeting, blockUser, unblockUser, reportCall, resetAccount,
   ]);
@@ -490,11 +579,3 @@ export const CONSTANTS = {
   COIN_AD_REWARD,
   DAILY_LOGIN_BONUS,
 };
-
-
-
-
-
-
-
-
