@@ -26,6 +26,7 @@ type AuthContextValue = {
   token: string | null;
   ready: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (idToken: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, otp: string) => Promise<void>;
   sendSignupOTP: (email: string) => Promise<void>;
   requestMagicLink: (email: string) => Promise<{ devToken: string | null }>;
@@ -123,6 +124,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await customFetch<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+      responseType: "json",
+    });
+    await persistAuth(res.token, res.user);
+    setToken(res.token);
+    setUser(res.user);
+  }, []);
+
+  const signInWithGoogle = useCallback(async (idToken: string) => {
+    const res = await customFetch<AuthResponse>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
       responseType: "json",
     });
     await persistAuth(res.token, res.user);
@@ -300,6 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       ready,
       signIn,
+      signInWithGoogle,
       signUp,
       sendSignupOTP,
       forgotPassword,
@@ -319,6 +332,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       ready,
       signIn,
+      signInWithGoogle,
       signUp,
       sendSignupOTP,
       forgotPassword,
