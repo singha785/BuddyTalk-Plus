@@ -26,7 +26,8 @@ type AuthContextValue = {
   token: string | null;
   ready: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, otp: string) => Promise<void>;
+  sendSignupOTP: (email: string) => Promise<void>;
   requestMagicLink: (email: string) => Promise<{ devToken: string | null }>;
   verifyMagicLink: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -49,6 +50,10 @@ type AuthContextValue = {
   sendPhoneOTP: (phone: string, purpose: "signin" | "signup") => Promise<{ devOtp: string | null; fallbackCode: string | null; verificationLink: string | null }>;
   /** Verify a phone OTP and sign in (creating an account for new users). */
   verifyPhoneOTP: (phone: string, code: string, name?: string) => Promise<void>;
+  /** Email a 6-digit code to the signed-in user's address to verify it. */
+  sendVerifyEmail: () => Promise<{ sent: boolean; alreadyVerified: boolean }>;
+  /** Confirm the emailed code; updates the stored user as verified. */
+  confirmVerifyEmail: (code: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -126,10 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (email: string, password: string, name: string) => {
+    async (email: string, password: string, name: string, otp: string) => {
       const res = await customFetch<AuthResponse>("/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, otp }),
         responseType: "json",
       });
       await persistAuth(res.token, res.user);
@@ -138,6 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     [],
   );
+
+  const sendSignupOTP = useCallback(async (email: string) => {
+    await customFetch<{ sent: boolean }>("/auth/signup/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+      responseType: "json",
+    });
+  }, []);
 
   const forgotPassword = useCallback(async (email: string) => {
     const res = await customFetch<{ sent: boolean; devCode: string | null; fallbackCode?: string; recoveryLink?: string }>(
@@ -225,6 +238,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const sendVerifyEmail = useCallback(async () => {
+    return customFetch<{ sent: boolean; alreadyVerified: boolean }>("/auth/verify-email/send", {
+      method: "POST",
+      responseType: "json",
+    });
+  }, []);
+
+  const confirmVerifyEmail = useCallback(async (code: string) => {
+    const res = await customFetch<{ verified: boolean; user: UserProfile }>("/auth/verify-email/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+      responseType: "json",
+    });
+    setUser(res.user);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await customFetch("/auth/logout", { method: "POST" });
@@ -271,10 +301,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       signIn,
       signUp,
+      sendSignupOTP,
       forgotPassword,
       resetPassword,
       sendPhoneOTP,
       verifyPhoneOTP,
+      sendVerifyEmail,
+      confirmVerifyEmail,
       requestMagicLink,
       verifyMagicLink,
       signOut,
@@ -287,10 +320,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       signIn,
       signUp,
+      sendSignupOTP,
       forgotPassword,
       resetPassword,
       sendPhoneOTP,
       verifyPhoneOTP,
+      sendVerifyEmail,
+      confirmVerifyEmail,
       requestMagicLink,
       verifyMagicLink,
       signOut,
