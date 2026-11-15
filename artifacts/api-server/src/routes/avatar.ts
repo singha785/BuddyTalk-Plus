@@ -122,7 +122,7 @@ router.post("/avatar/scenario", async (req, res, next) => {
 
 router.post("/avatar/speech", async (req, res, next) => {
   try {
-    const text = String(req.body?.text || "").slice(0, 1000);
+    const text = String(req.body?.text || "").slice(0, 1000); const ratePctRaw = Number(req.body?.ratePct); const ratePct = Number.isFinite(ratePctRaw) ? Math.max(-60, Math.min(30, Math.round(ratePctRaw))) : -4;
     if (!text) {
       res.status(400).json({ error: "text is required" });
       return;
@@ -130,7 +130,7 @@ router.post("/avatar/speech", async (req, res, next) => {
 
     const tts = new MsEdgeTTS({});
     await tts.setMetadata("en-IN-NeerjaNeural", OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const result: any = await (tts as any).toStream(text, { rate: "-4%", pitch: "+15Hz", volume: "+0%" }); const audioStream = result.audioStream ?? result;
+    const result: any = await (tts as any).toStream(text, { rate: (ratePct >= 0 ? "+" : "") + ratePct + "%", pitch: "+15Hz", volume: "+0%" }); const audioStream = result.audioStream ?? result;
 
     res.setHeader("Content-Type", "audio/mpeg");
 

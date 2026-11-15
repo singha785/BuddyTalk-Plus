@@ -10,17 +10,28 @@ import { requireAuth } from "../middlewares/requireAuth";
  * Change a value, redeploy, done. The phone app can never decide amounts.
  * ────────────────────────────────────────────────────────────────────────── */
 export const COIN_CONFIG = {
+  /** MASTER SWITCH. false = every feature is free (launch period). Set to true to start charging coins. */
+  chargeEnabled: false,
+  /** Price list. cost = coins per use, freePerDay = free uses per day before coins are charged. */
+  features: {
+    nina_session: { cost: 15, freePerDay: 1 },
+    roleplay: { cost: 25, freePerDay: 1 },
+    debate: { cost: 10, freePerDay: 1 },
+    ai_feedback: { cost: 10, freePerDay: 1 },
+    story: { cost: 6, freePerDay: 3 },
+    game_play: { cost: 3, freePerDay: 3 },
+  } as Record<string, { cost: number; freePerDay: number }>,
   /** One-time gift on the very first wallet sync of an account. */
   signupBonus: 50,
   /** Everything a user can EARN in one (UTC) day, all reasons together. */
-  dailyEarnCap: 200,
+  dailyEarnCap: 60,
   earn: {
     /** Opening the app, once per day. */
-    daily_login: { fixedAmount: 2, perDayCount: 1 },
+    daily_login: { fixedAmount: 5, perDayCount: 1 },
     /** Daily tasks / missions. ref = task id, so one reward per task per day. */
     task: { maxPerGrant: 15, perDayCount: 12 },
     /** Rewarded ad. */
-    ad: { fixedAmount: 15, perDayCount: 10 },
+    ad: { fixedAmount: 9, perDayCount: 3 },
     /** Mini-games (bubble pop, tongue twister...) and anything else small. */
     bonus: { maxPerGrant: 20, perDayCount: 10 },
   } as Record<string, { fixedAmount?: number; maxPerGrant?: number; perDayCount: number }>,
@@ -265,6 +276,66 @@ router.post("/wallet/spend", requireAuth, async (req, res, next) => {
 
     if (!out.ok) {
       res.status(402).json({ error: "insufficient_coins", message: "Not enough coins.", balance: out.balance });
+      return;
+    }
+    res.json(out);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ── GET /wallet/config : prices + master switch, so the app can show them ── */
+router.get("/wallet/config", requireAuth, (_req, res) => {
+  res.json({ chargeEnabled: COIN_CONFIG.chargeEnabled, features: COIN_CONFIG.features });
+});
+
+/* ── POST /wallet/charge  { feature, ref? } ───────────────────────────────── */
+router.post("/wallet/charge", requireAuth, async (req, res, next) => {
+  try {
+    await ensureTables();
+    const userId = req.user!.id;
+    const feature = String(req.body?.feature ?? "");
+    const rule = COIN_CONFIG.features[feature];
+    if (!rule) {
+      res.status(400).json({ error: "unknown_feature", message: "Unknown feature." });
+      return;
+    }
+    const reason = "use_" + feature;
+    const day = utcDay();
+    const ref = cleanRef(req.body?.ref);
+    const note = cleanNote(req.body?.note);
+
+    const out = await db.transaction(async (tx) => {
+      await lockUser(tx, userId);
+      const bal = await balanceOf(tx, userId);
+      // launch period: everything free, nothing is written
+      if (!COIN_CONFIG.chargeEnabled) return { ok: true as const, charged: 0, free: true, balance: bal };
+
+      if (ref) {
+        const dup = rowsOf(
+          await tx.execute(
+            sql`select 1 from coin_ledger where user_id = ${userId}::uuid and reason = ${reason} and ref = ${ref} limit 1`,
+          ),
+        );
+        if (dup.length) return { ok: true as const, charged: 0, free: true, balance: bal };
+      }
+
+      const used = rowsOf(
+        await tx.execute(
+          sql`select count(*)::int as c from coin_ledger where user_id = ${userId}::uuid and day = ${day} and reason = ${reason}`,
+        ),
+      );
+      if (Number(used[0]?.c ?? 0) < rule.freePerDay) {
+        await insertRow(tx, userId, 0, reason, ref, note, bal);
+        return { ok: true as const, charged: 0, free: true, balance: bal };
+      }
+      if (bal < rule.cost) return { ok: false as const, balance: bal, cost: rule.cost };
+      await insertRow(tx, userId, -rule.cost, reason, ref, note, bal - rule.cost);
+      return { ok: true as const, charged: rule.cost, free: false, balance: bal - rule.cost };
+    });
+
+    if (!out.ok) {
+      res.status(402).json({ error: "insufficient_coins", message: "Not enough coins.", balance: out.balance, cost: out.cost });
       return;
     }
     res.json(out);
