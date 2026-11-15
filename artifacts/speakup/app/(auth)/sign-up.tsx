@@ -16,8 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/Button";
 import { Pressable } from "@/components/Pressable";
 import { useAuth } from "@/context/AuthContext";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
-// ── Password strength ────────────────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function passwordStrength(pw: string): { level: "weak" | "medium" | "strong"; score: number } {
   if (!pw) return { level: "weak", score: 0 };
@@ -34,83 +35,55 @@ function passwordStrength(pw: string): { level: "weak" | "medium" | "strong"; sc
 const STRENGTH_COLOR = { weak: "#E5484D", medium: "#F5A524", strong: "#16A085" };
 const STRENGTH_LABEL = { weak: "Weak", medium: "Medium", strong: "Strong" };
 
+// Turns a server error into a short message the user can act on.
+function friendly(e: unknown, fallback: string, map: Record<string, string> = {}): string {
+  const raw = e instanceof Error ? e.message : "";
+  if (raw.includes("Network request failed") || raw.includes("fetch failed") || raw.includes("Failed to fetch")) {
+    return "Cannot reach the server. Check your connection and try again.";
+  }
+  for (const key of Object.keys(map)) {
+    if (raw.includes(key)) return map[key];
+  }
+  const cleaned = raw.replace(/^HTTP \d+[^:]*:\s*/, "").trim();
+  return cleaned || fallback;
+}
+
 export default function SignUp() {
   const insets = useSafeAreaInsets();
-  const { signUp, sendPhoneOTP } = useAuth();
+  const { signUp } = useAuth();
 
-  const [tab, setTab] = useState<"email" | "phone">("email");
-
-  // Email fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Phone fields
-  const [phoneName, setPhoneName] = useState("");
-  const [phone, setPhone] = useState("");
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Validation ─────────────────────────────────────────────────────────────
-  const emailValid =
-    name.trim().length >= 1 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    password.length >= 8;
-
+  const emailTrim = email.trim();
   const emailTouched = email.length > 0;
-  const emailFormatOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailFormatOk = EMAIL_RE.test(emailTrim);
+  const detailsValid = name.trim().length >= 1 && emailFormatOk && password.length >= 8;
   const { level: pwLevel, score: pwScore } = passwordStrength(password);
 
-  const phoneNormalized = phone.replace(/\D/g, "");
-  const phoneValid = phoneName.trim().length >= 1 && phoneNormalized.length >= 7;
-
-  // ── Submit: email ──────────────────────────────────────────────────────────
-  const onEmailSubmit = async () => {
-    if (!emailValid || submitting) return;
+  const onCreate = async () => {
+    if (!detailsValid || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
-      await signUp(email.trim(), password, name.trim());
+      await signUp(emailTrim, password, name.trim());
       router.replace("/onboarding");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      if (e instanceof TypeError || msg.includes("Network request failed") || msg.includes("fetch failed")) {
-        setError("Can't reach the server. Check your connection and try again.");
-      } else if (msg.includes("409")) {
-        setError("That email is already registered.");
-      } else {
-        setError(msg || "Could not create account. Please try again.");
-      }
+      setError(
+        friendly(e, "Could not create account. Please try again.", {
+          "409": "That email is already registered. Please sign in.",
+        }),
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── Submit: phone ──────────────────────────────────────────────────────────
-  const onSendOTP = async () => {
-    if (!phoneValid || submitting) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const { fallbackCode, devOtp } = await sendPhoneOTP(phone, "signup");
-      router.push({
-        pathname: "/(auth)/otp-verify",
-        params: {
-          phone: phoneNormalized,
-          purpose: "signup",
-          name: phoneName.trim(),
-          devOtp: fallbackCode ?? devOtp ?? "",
-        },
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      setError(msg || "Could not send OTP. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const onBack = () => router.back();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F7F5FF" }}>
@@ -129,55 +102,30 @@ export default function SignUp() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Back */}
           <Pressable
-            onPress={() => router.back()}
+            onPress={onBack}
             style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" }}
           >
             <Feather name="arrow-left" size={18} color="#FFFFFF" />
           </Pressable>
 
-          {/* Heading */}
           <View style={{ marginTop: 28 }}>
             <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 34, letterSpacing: -0.4 }}>
-              Create your{"\n"}BuddyTalk+ account
+              {"Create your\nBuddyTalk+ account"}
             </Text>
-            <Text style={{ color: "#FFFFFF", opacity: 0.85, fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 8 }}>
-              Start speaking confidently with real partners.
+            <Text style={{ color: "#FFFFFF", opacity: 0.85, fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 8, lineHeight: 20 }}>
+              Just your email and a password. You can verify your email later from Profile.
             </Text>
           </View>
 
-          {/* Form card */}
+          <GoogleSignInButton style={{ marginTop: 48 }} />
+
           <View style={{ backgroundColor: "#FFFFFF", borderRadius: 22, padding: 18, marginTop: 32, gap: 14, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
-
-            {/* Tab toggle */}
-            <View style={{ flexDirection: "row", backgroundColor: "#F4F2FB", borderRadius: 14, padding: 4 }}>
-              {(["email", "phone"] as const).map((t) => (
-                <RNPressable
-                  key={t}
-                  onPress={() => { setTab(t); setError(null); }}
-                  style={{ flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 10, backgroundColor: tab === t ? "#5B3DFF" : "transparent" }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Feather name={t === "email" ? "mail" : "smartphone"} size={14} color={tab === t ? "#FFFFFF" : "#5C5680"} />
-                    <Text style={{ color: tab === t ? "#FFFFFF" : "#5C5680", fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                      {t === "email" ? "Email" : "Phone"}
-                    </Text>
-                  </View>
-                </RNPressable>
-              ))}
-            </View>
-
-            {/* ── Email tab ─────────────────────────────────────────────── */}
-            {tab === "email" && (
-              <>
+            <>
                 <Field icon="user" label="Your name" value={name} onChangeText={setName} placeholder="e.g. Aisha" autoCapitalize="words" />
 
-                {/* Email with real-time format indicator */}
                 <View>
-                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#5C5680", marginBottom: 6, letterSpacing: 0.3 }}>
-                    EMAIL
-                  </Text>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#5C5680", marginBottom: 6, letterSpacing: 0.3 }}>EMAIL</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F4F2FB", borderRadius: 14, paddingHorizontal: 14, height: 52 }}>
                     <Feather name="mail" size={16} color="#5C5680" />
                     <TextInput
@@ -200,11 +148,8 @@ export default function SignUp() {
                   </View>
                 </View>
 
-                {/* Password with toggle + strength bar */}
                 <View style={{ gap: 8 }}>
-                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#5C5680", marginBottom: 2, letterSpacing: 0.3 }}>
-                    PASSWORD
-                  </Text>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#5C5680", marginBottom: 2, letterSpacing: 0.3 }}>PASSWORD</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F4F2FB", borderRadius: 14, paddingHorizontal: 14, height: 52 }}>
                     <Feather name="lock" size={16} color="#5C5680" />
                     <TextInput
@@ -221,7 +166,6 @@ export default function SignUp() {
                       <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9C97B8" />
                     </RNPressable>
                   </View>
-                  {/* Strength bar */}
                   {password.length > 0 && (
                     <View style={{ gap: 4 }}>
                       <View style={{ flexDirection: "row", gap: 4 }}>
@@ -240,52 +184,20 @@ export default function SignUp() {
                 {error && <Text style={{ color: "#B0181F", fontFamily: "Inter_500Medium", fontSize: 13 }}>{error}</Text>}
 
                 <Button
-                  label={submitting ? "Creating account…" : "Create account"}
-                  icon="arrow-right"
-                  onPress={onEmailSubmit}
-                  disabled={!emailValid || submitting}
+                  label={submitting ? "Creating account..." : "Create account"}
+                  icon="check"
+                  onPress={onCreate}
+                  disabled={!detailsValid || submitting}
                   loading={submitting}
                   fullWidth
                   size="lg"
                 />
               </>
-            )}
 
-            {/* ── Phone tab ─────────────────────────────────────────────── */}
-            {tab === "phone" && (
-              <>
-                <Field icon="user" label="Your name" value={phoneName} onChangeText={setPhoneName} placeholder="e.g. Aisha" autoCapitalize="words" />
-                <Field
-                  icon="smartphone"
-                  label="Phone number"
-                  value={phone}
-                  onChangeText={(v) => { setPhone(v); setError(null); }}
-                  placeholder="+1 555 123 4567"
-                  keyboardType="phone-pad"
-                  autoComplete="tel"
-                />
-                <Text style={{ color: "#5C5680", fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18 }}>
-                  We'll send a 6-digit verification code to your number.
-                </Text>
-                {error && <Text style={{ color: "#B0181F", fontFamily: "Inter_500Medium", fontSize: 13 }}>{error}</Text>}
-                <Button
-                  label={submitting ? "Sending…" : "Send OTP"}
-                  icon="arrow-right"
-                  onPress={onSendOTP}
-                  disabled={!phoneValid || submitting}
-                  loading={submitting}
-                  fullWidth
-                  size="lg"
-                />
-              </>
-            )}
           </View>
 
-          {/* Footer */}
           <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 22, gap: 6 }}>
-            <Text style={{ color: "#5C5680", fontFamily: "Inter_500Medium", fontSize: 14 }}>
-              Already have an account?
-            </Text>
+            <Text style={{ color: "#5C5680", fontFamily: "Inter_500Medium", fontSize: 14 }}>Already have an account?</Text>
             <Pressable onPress={() => router.replace("/(auth)/sign-in")}>
               <Text style={{ color: "#5B3DFF", fontFamily: "Inter_700Bold", fontSize: 14 }}>Sign in</Text>
             </Pressable>

@@ -61,7 +61,7 @@ export function GoogleSignInButton({ style }: { style?: ViewStyle }) {
         disabled={busy}
         accessibilityRole="button"
         accessibilityLabel="Continue with Google"
-        style={({ pressed }) => ({ height: 52, borderRadius: 16, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, opacity: pressed || busy ? 0.85 : 1, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 })}
+        style={({ pressed }) => ({ height: 58, borderRadius: 18, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, opacity: pressed || busy ? 0.85 : 1, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 })}
       >
         {busy ? (
           <ActivityIndicator color="#4285F4" />
@@ -75,11 +75,11 @@ export function GoogleSignInButton({ style }: { style?: ViewStyle }) {
         )}
         <Text style={{ color: "#1F1F1F", fontWeight: "700", fontSize: 15.5 }}>Continue with Google</Text>
       </Pressable>
-      {err ? <Text style={{ color: "#FFE3E3", fontWeight: "600", fontSize: 12.5, textAlign: "center", marginTop: 8 }}>{err}</Text> : null}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 20 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.45)" }} />
-        <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>or</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.45)" }} />
+      {err ? <Text style={{ color: "#C62828", fontWeight: "600", fontSize: 12.5, textAlign: "center", marginTop: 8 }}>{err}</Text> : null}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 24 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#CFC9E8" }} />
+        <Text style={{ color: "#5C5680", fontWeight: "700", fontSize: 14 }}>or</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#CFC9E8" }} />
       </View>
     </View>
   );

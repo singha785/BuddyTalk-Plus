@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/Button";
 import { Pressable } from "@/components/Pressable";
 import { useAuth } from "@/context/AuthContext";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SECS = 30;
@@ -215,26 +216,13 @@ export default function SignIn() {
             </RNPressable>
           )}
 
+          <GoogleSignInButton style={{ marginTop: 44 }} />
+
           {/* Form card */}
           <View style={{ backgroundColor: "#FFFFFF", borderRadius: 22, padding: 18, marginTop: 24, gap: 14, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
 
             {/* Email / Phone tab toggle */}
-            <View style={{ flexDirection: "row", backgroundColor: "#F4F2FB", borderRadius: 14, padding: 4 }}>
-              {(["email", "phone"] as const).map((t) => (
-                <RNPressable
-                  key={t}
-                  onPress={() => { setTab(t); setError(null); }}
-                  style={{ flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 10, backgroundColor: tab === t ? "#5B3DFF" : "transparent" }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Feather name={t === "email" ? "mail" : "smartphone"} size={14} color={tab === t ? "#FFFFFF" : "#5C5680"} />
-                    <Text style={{ color: tab === t ? "#FFFFFF" : "#5C5680", fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                      {t === "email" ? "Email" : "Phone"}
-                    </Text>
-                  </View>
-                </RNPressable>
-              ))}
-            </View>
+            
 
             {/* ── Email tab ─────────────────────────────────────────────── */}
             {tab === "email" && (
@@ -291,11 +279,7 @@ export default function SignIn() {
                   size="lg"
                 />
 
-                <Pressable onPress={() => router.replace("/(auth)/magic-link")} style={{ alignItems: "center", paddingVertical: 4 }}>
-                  <Text style={{ color: "#5B3DFF", fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                    Use a magic link instead →
-                  </Text>
-                </Pressable>
+                
               </>
             )}
 
