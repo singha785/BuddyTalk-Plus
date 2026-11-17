@@ -3,7 +3,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "@workspace/db";
 
 // BuddyLive v2: friends-only 1-to-1 text chat. All events are prefixed bl_ so they never clash with call events.
-// Chat messages live in the database for RETENTION_DAYS days and are then deleted automatically.
+// Chat messages live in the database for RETENTION_HOURS hours and are then deleted automatically.
 // Friends, blocks, requests and conversations are never deleted by the cleanup.
 
 type ConnectedLike = {
@@ -23,8 +23,8 @@ type Log = {
 type Ack = (res: unknown) => void;
 
 const MAX_LEN = 300;
-const RETENTION_DAYS = 7;
-const CLEANUP_EVERY_MS = 3 * 60 * 60 * 1000;
+const RETENTION_HOURS = 48;
+const CLEANUP_EVERY_MS = 30 * 60 * 1000;
 const SEND_WINDOW_MS = 10_000;
 const SEND_MAX = 8;
 const REQ_WINDOW_MS = 60_000;
@@ -138,14 +138,14 @@ function tooFast(key: string, windowMs: number, max: number): boolean {
 
 async function cleanupOld(log: Log): Promise<void> {
   try {
-    const r = await q(sql`with d as (delete from bl_chat_messages where created_at < now() - (${RETENTION_DAYS}::int * interval '1 day') returning 1) select count(*)::int as n from d`);
+    const r = await q(sql`with d as (delete from bl_chat_messages where created_at < now() - (${RETENTION_HOURS}::int * interval '1 hour') returning 1) select count(*)::int as n from d`);
     const n = Number(r[0]?.n ?? 0);
-    if (n > 0) log.info({ deleted: n, days: RETENTION_DAYS }, "BuddyLive: old chat messages deleted");
+    if (n > 0) log.info({ deleted: n, hours: RETENTION_HOURS }, "BuddyLive: old chat messages deleted");
   } catch (err) {
     log.warn({ err: String(err) }, "BuddyLive: message cleanup failed");
   }
   try {
-    await db.execute(sql`delete from bl_messages where created_at < now() - (${RETENTION_DAYS}::int * interval '1 day')`);
+    await db.execute(sql`delete from bl_messages where created_at < now() - (${RETENTION_HOURS}::int * interval '1 hour')`);
   } catch {
     /* legacy table may not exist */
   }
@@ -167,7 +167,7 @@ function ready(log: Log): Promise<void> {
         void cleanupOld(log);
       }, CLEANUP_EVERY_MS);
       (t as { unref?: () => void }).unref?.();
-      log.info({ days: RETENTION_DAYS }, "BuddyLive ready");
+      log.info({ hours: RETENTION_HOURS }, "BuddyLive ready");
     })().catch((err) => {
       readyPromise = null;
       log.warn({ err: String(err) }, "BuddyLive setup failed");
@@ -449,7 +449,7 @@ export function registerBuddyLive(
     if (Number(today[0]?.n ?? 0) >= REPORTS_PER_DAY) return reply({ ok: false, error: "too_many" });
     const category = REPORT_CATEGORIES.has(String(d.category)) ? String(d.category) : "other";
     let description = String(d.description ?? "").slice(0, 500);
-    // Chat messages are deleted after RETENTION_DAYS, so keep a short copy of the last messages with the report.
+    // Chat messages are deleted after RETENTION_HOURS, so keep a short copy of the last messages with the report.
     const [x, y] = pair(me, id);
     const last = await q(sql`select m.sender_id, m.body from bl_chat_messages m join bl_conversations c on c.id = m.conversation_id where c.user_a = ${x}::uuid and c.user_b = ${y}::uuid order by m.created_at desc limit 10`);
     if (last.length > 0) {
