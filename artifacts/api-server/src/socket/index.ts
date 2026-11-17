@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { sessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { registerBuddyLive } from "./buddylive";
 
 export type PresenceStatus = "live" | "in-call" | "away" | "offline";
 
@@ -151,6 +152,23 @@ function ringNextUser(callId: string): void {
   });
 }
 
+// Frees a user (and their partner) from a call. Used when the app cuts but server state is stuck.
+function endCallFor(socketId: string): void {
+  const me = connected.get(socketId);
+  if (!me || !me.inCallWith) return;
+  const partnerSocketId = me.inCallWith;
+  const partner = connected.get(partnerSocketId);
+  me.inCallWith = null;
+  me.status = me.wantsCalls ? "live" : "away";
+  broadcastPresence(me.userId, me.status);
+  if (partner && partner.inCallWith === socketId) {
+    partner.inCallWith = null;
+    partner.status = partner.wantsCalls ? "live" : "away";
+    broadcastPresence(partner.userId, partner.status);
+  }
+  io.to(partnerSocketId).emit("call_ended", { from: socketId });
+}
+
 export function initSocket(httpServer: HttpServer) {
   io = new SocketServer(httpServer, {
     path: "/api/socket.io",
@@ -185,12 +203,14 @@ export function initSocket(httpServer: HttpServer) {
     socket.emit("presence_snapshot", presenceSnapshot);
 
     logger.info({ userId: meta.userId, role: meta.role }, "Socket connected");
+    registerBuddyLive(io, socket, meta, () => connected.values(), logger);
 
     // ── Online / offline toggle ──────────────────────────────────────────────
     socket.on("set_online_status", (data: { online: boolean }) => {
       const u = connected.get(socket.id);
-      if (!u || u.inCallWith) return;
-      u.wantsCalls = data.online;
+      if (!u) return;
+      u.wantsCalls = !!data?.online;
+      if (u.inCallWith) return;
       const newStatus: PresenceStatus = data.online ? "live" : "away";
       if (u.status !== newStatus) { u.status = newStatus; broadcastPresence(u.userId, newStatus); }
     });
@@ -199,11 +219,27 @@ export function initSocket(httpServer: HttpServer) {
     socket.on("heartbeat", (data: { status?: PresenceStatus }) => {
       const u = connected.get(socket.id);
       if (!u) return;
+      if (u.inCallWith) {
+        const p = connected.get(u.inCallWith);
+        if (!p || p.inCallWith !== socket.id) u.inCallWith = null;
+      }
       const newStatus: PresenceStatus = u.inCallWith ? "in-call" : u.wantsCalls ? (data.status ?? "live") : "away";
       if (u.status !== newStatus) { u.status = newStatus; broadcastPresence(u.userId, newStatus); }
     });
 
     // ── Legacy queue ─────────────────────────────────────────────────────────
+    // Leaderboard realtime: a client says it just saved a score, everyone refreshes.
+    let lbLast = 0;
+    socket.on("lb_changed", () => {
+      const now = Date.now();
+      if (now - lbLast < 1500) return;
+      lbLast = now;
+      io.emit("lb_update", { at: now });
+    });
+
+    socket.on("lb_join", () => { void socket.join("leaderboard"); });
+    socket.on("lb_leave", () => { void socket.leave("leaderboard"); });
+
     socket.on("join_queue", () => {
       const idx = queue.findIndex((e) => e.socketId === socket.id);
       if (idx !== -1) queue.splice(idx, 1);
@@ -219,7 +255,15 @@ export function initSocket(httpServer: HttpServer) {
     // ── Push-based calling ────────────────────────────────────────────────────
     socket.on("call_user", () => {
       const caller = connected.get(socket.id);
-      if (!caller || caller.inCallWith) return;
+      if (!caller) return;
+      // The app pressed "call", so it is not in a call. Free any stuck state first.
+      if (caller.inCallWith) endCallFor(socket.id);
+      for (const [cid, att] of activeCallAttempts) {
+        if (att.callerSocketId === socket.id) {
+          io.to(att.receiverSocketId).emit("call_cancelled");
+          activeCallAttempts.delete(cid);
+        }
+      }
 
       const callId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const triedSocketIds = new Set<string>();
@@ -247,12 +291,16 @@ export function initSocket(httpServer: HttpServer) {
     });
 
     socket.on("cancel_call", (data: { callId?: string }) => {
+      let cancelled = false;
       for (const [cid, attempt] of activeCallAttempts) {
         if (attempt.callerSocketId !== socket.id) continue;
-        if (data.callId && cid !== data.callId) continue;
+        if (data?.callId && cid !== data.callId) continue;
         io.to(attempt.receiverSocketId).emit("call_cancelled");
         activeCallAttempts.delete(cid);
+        cancelled = true;
       }
+      // Receiver already accepted: a cut now means the call is over, free both users.
+      if (!cancelled) endCallFor(socket.id);
     });
 
     socket.on("call_accept", (data: { callId: string }) => {
