@@ -7,6 +7,7 @@ import mentorsRouter from "./mentors";
 import avatarRouter from "./avatar";
 import walletRouter from "./wallet";
 import leaderboardRouter from "./leaderboard";
+import appVersionRouter from "./appVersion";
 
 const router: IRouter = Router();
 
@@ -18,6 +19,7 @@ router.use(mentorsRouter);
 router.use(avatarRouter);
 router.use(walletRouter);
 router.use(leaderboardRouter);
+router.use(appVersionRouter);
 
 export default router;
 
