@@ -33,6 +33,18 @@ const REPORTS_PER_DAY = 5;
 const COLORS = ["#FF7A45", "#5B3DFF", "#16A085", "#F5A524", "#E5484D", "#7C3AED"];
 const REPORT_CATEGORIES = new Set(["spam", "harassment", "abusive", "fake_profile", "fraud", "inappropriate", "other"]);
 
+// English-only chat: Hindi (Devanagari) and clear Hinglish are rejected. Same rule as the app, so old app versions cannot bypass it.
+const HINGLISH = new Set(
+  "kya nahi nahin nhi kaise kaisa kaisi kaun kab kyun kyu kyon kahan kaha kidhar hai hain hoon hun tha thi hoga hogi mujhe tumhe tujhe aapko aap tum mera meri mere tera teri tere uska uski apna apni bahut bohot bhot accha acha achha theek thik bilkul abhi aaj raat subah kaam ghar dost yaar bhai didi karna karo karte karti kiya karunga karungi raha rahi rahe gaya gayi chahiye chalo chal bolo bata batao samajh pata lekin magar aur toh wala wali wale kuch koi sab sabhi bas haan matlab zyada jyada thoda thodi khana paani pani kitna kitne kitni wahan yahan idhar udhar phir sirf bhi isliye kyunki".split(" "),
+);
+function notEnglish(s: string): boolean {
+  if (/[\u0900-\u097F]/.test(s)) return true;
+  const words = s.toLowerCase().match(/[a-z']+/g) ?? [];
+  let hits = 0;
+  for (const w of words) if (HINGLISH.has(w)) hits++;
+  return hits >= 2;
+}
+
 /* ───────── database helpers ───────── */
 async function q(query: SQL): Promise<any[]> {
   const r: any = await db.execute(query);
@@ -512,6 +524,7 @@ export function registerBuddyLive(
     const clientId = typeof d.clientId === "string" && d.clientId.length <= 80 ? d.clientId : null;
     if (!to || to === me) return reply({ ok: false, error: "invalid" });
     if (!text || text.length > MAX_LEN) return reply({ ok: false, error: "length" });
+    if (notEnglish(text)) return reply({ ok: false, error: "english_only" });
     if (tooFast(`send:${me}`, SEND_WINDOW_MS, SEND_MAX)) return reply({ ok: false, error: "slow_down" });
     if (await isSuspended(me)) return reply({ ok: false, error: "suspended" });
     if (!(await userRow(to))) return reply({ ok: false, error: "unavailable" });
